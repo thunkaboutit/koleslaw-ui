@@ -39,7 +39,7 @@ function loginWithGitHub() {
 <template>
   <div class="login">
     <div class="login__card">
-      <h1 class="login__title">Prompt Enhance</h1>
+      <h1 class="login__title">Koleslaw</h1>
       <p class="login__subtitle">Developer Portal</p>
 
       <form class="login__form" @submit.prevent="handleLogin">
@@ -95,7 +95,9 @@ function loginWithGitHub() {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
+  min-height: 100vh;
+  background: var(--color-background);
+  padding: 2rem;
 }
 
 .login__card {
@@ -109,8 +111,9 @@ function loginWithGitHub() {
 }
 
 .login__title {
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 900;
   color: var(--color-heading);
   margin-bottom: 0.25rem;
 }
@@ -132,7 +135,7 @@ function loginWithGitHub() {
 .form-label {
   display: block;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 0.375rem;
   color: var(--color-heading);
 }
@@ -140,10 +143,11 @@ function loginWithGitHub() {
 .form-input {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-hover);
   border-radius: var(--radius);
   background: var(--color-background);
   color: var(--color-text);
+  font-family: var(--font-body);
   font-size: 0.875rem;
 }
 
@@ -185,12 +189,13 @@ function loginWithGitHub() {
   align-items: center;
   gap: 0.625rem;
   padding: 0.625rem 1.25rem;
-  background: var(--vt-c-black);
-  color: var(--vt-c-white);
+  background: var(--wl-black);
+  color: var(--wl-cream);
   border: none;
   border-radius: var(--radius);
+  font-family: var(--font-body);
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: opacity 0.15s;
 }
@@ -201,12 +206,5 @@ function loginWithGitHub() {
 
 .login__icon {
   flex-shrink: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .login__github {
-    background: var(--vt-c-white);
-    color: var(--vt-c-black);
-  }
 }
 </style>

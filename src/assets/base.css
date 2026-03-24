@@ -1,75 +1,53 @@
-/* color palette from https://github.com/vuejs/theme */
+/* Koleslaw Design System — vintage-print meets developer docs */
 :root {
-  --vt-c-white: #ffffff;
-  --vt-c-white-soft: #f8f8f8;
-  --vt-c-white-mute: #f2f2f2;
+  /* Brand palette */
+  --wl-cream: #f5f0e8;
+  --wl-cream-light: #faf7f2;
+  --wl-cream-dark: #ebe5d8;
+  --wl-black: #2a2a2a;
+  --wl-navy: #1a2744;
+  --wl-navy-light: #2a3a5c;
+  --wl-gold: #c9a84c;
+  --wl-gold-muted: #b89a3e;
+  --wl-olive: #5a6340;
+  --wl-warm-gray: #7a7568;
+  --wl-warm-gray-light: #a09a8c;
+  --wl-charcoal: #2d2d2d;
+  --wl-code-green: #8fbf6a;
+  --wl-code-gold: #d4a843;
+  --wl-code-blue: #7bb0cc;
+  --wl-white: #ffffff;
 
-  --vt-c-black: #181818;
-  --vt-c-black-soft: #222222;
-  --vt-c-black-mute: #282828;
+  /* Semantic tokens */
+  --color-background: var(--wl-cream);
+  --color-background-soft: var(--wl-cream-light);
+  --color-background-mute: var(--wl-cream-dark);
 
-  --vt-c-indigo: #2c3e50;
+  --color-border: rgba(42, 42, 42, 0.12);
+  --color-border-hover: rgba(42, 42, 42, 0.25);
 
-  --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
-  --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
-  --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
-  --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
+  --color-heading: var(--wl-black);
+  --color-text: #4a453c;
 
-  --vt-c-text-light-1: var(--vt-c-indigo);
-  --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
-  --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
-}
+  --color-card: var(--wl-cream-light);
 
-/* semantic color variables for this project */
-:root {
-  --color-background: var(--vt-c-white);
-  --color-background-soft: var(--vt-c-white-soft);
-  --color-background-mute: var(--vt-c-white-mute);
-
-  --color-border: var(--vt-c-divider-light-2);
-  --color-border-hover: var(--vt-c-divider-light-1);
-
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
-
-  --color-card: var(--vt-c-white);
-
-  --color-primary: #4f46e5;
-  --color-primary-hover: #4338ca;
-  --color-danger: #dc2626;
-  --color-danger-hover: #b91c1c;
-  --color-danger-bg: rgba(220, 38, 38, 0.08);
-  --color-success: #16a34a;
-  --color-success-bg: rgba(22, 163, 74, 0.08);
+  --color-primary: var(--wl-navy);
+  --color-primary-hover: var(--wl-navy-light);
+  --color-danger: #9e2a2a;
+  --color-danger-hover: #7e1e1e;
+  --color-danger-bg: rgba(158, 42, 42, 0.08);
+  --color-success: #4a7a3a;
+  --color-success-bg: rgba(74, 122, 58, 0.08);
 
   --radius: 6px;
   --radius-lg: 10px;
 
-  --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace;
+  /* Typography */
+  --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', Menlo, Consolas, monospace;
 
-  --section-gap: 160px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--vt-c-black);
-    --color-background-soft: var(--vt-c-black-soft);
-    --color-background-mute: var(--vt-c-black-mute);
-
-    --color-border: var(--vt-c-divider-dark-2);
-    --color-border-hover: var(--vt-c-divider-dark-1);
-
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
-
-    --color-card: var(--vt-c-black-soft);
-
-    --color-primary: #818cf8;
-    --color-primary-hover: #6366f1;
-    --color-danger-bg: rgba(220, 38, 38, 0.15);
-    --color-success-bg: rgba(22, 163, 74, 0.15);
-  }
+  --section-gap: 4rem;
 }
 
 *,
@@ -84,25 +62,103 @@ body {
   min-height: 100vh;
   color: var(--color-text);
   background: var(--color-background);
-  transition:
-    color 0.5s,
-    background-color 0.5s;
   line-height: 1.6;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    sans-serif;
-  font-size: 15px;
+  font-family: var(--font-body);
+  font-size: 16px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Subtle parchment grain texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.3;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--color-heading);
+  line-height: 1.2;
+}
+
+h1 { font-size: 2.5rem; font-weight: 900; }
+h2 { font-size: 1.75rem; font-weight: 700; }
+h3 { font-size: 1.25rem; font-weight: 700; }
+
+a {
+  color: var(--wl-navy);
+  text-decoration-color: var(--wl-gold);
+}
+
+a:hover {
+  color: var(--wl-navy-light);
+}
+
+/* Focus states for accessibility */
+:focus-visible {
+  outline: 2px solid var(--wl-navy);
+  outline-offset: 2px;
+}
+
+/* Section divider ornament */
+.section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: var(--section-gap) auto;
+  max-width: 400px;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-hover);
+}
+
+.section-divider__ornament {
+  width: 8px;
+  height: 8px;
+  background: var(--wl-gold);
+  transform: rotate(45deg);
+  flex-shrink: 0;
+}
+
+/* Fade-in animation for sections */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-in.delay-1 { animation-delay: 0.1s; }
+.animate-in.delay-2 { animation-delay: 0.2s; }
+.animate-in.delay-3 { animation-delay: 0.3s; }
+.animate-in.delay-4 { animation-delay: 0.4s; }
+.animate-in.delay-5 { animation-delay: 0.5s; }
+
+/* Floating bob animation for code icons */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }

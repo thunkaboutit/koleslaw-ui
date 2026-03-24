@@ -28,7 +28,7 @@ const periods = [
 </script>
 
 <template>
-  <div>
+  <div class="dashboard">
     <div class="page-header">
       <h1>Dashboard</h1>
       <div class="period-selector">
@@ -72,6 +72,12 @@ const periods = [
 </template>
 
 <style scoped>
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
 .page-header {
   display: flex;
   align-items: center;
@@ -80,8 +86,9 @@ const periods = [
 }
 
 .page-header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 900;
   color: var(--color-heading);
 }
 
@@ -97,15 +104,17 @@ const periods = [
   padding: 0.375rem 0.75rem;
   border: none;
   background: transparent;
+  font-family: var(--font-body);
   font-size: 0.8125rem;
   cursor: pointer;
   border-radius: var(--radius);
   color: var(--color-text);
+  transition: background 0.2s, color 0.2s;
 }
 
 .period-btn.active {
   background: var(--color-card);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-heading);
 }
 
@@ -117,8 +126,9 @@ const periods = [
 }
 
 .stat-value {
+  font-family: var(--font-heading);
   font-size: 2rem;
-  font-weight: 700;
+  font-weight: 900;
   color: var(--color-heading);
 }
 

@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import AppNavbar from '@/components/AppNavbar.vue'
+import BorderFrame from '@/components/BorderFrame.vue'
 
 const route = useRoute()
 </script>
 
 <template>
-  <AppNavbar v-if="route.name !== 'login'" />
-  <RouterView />
+  <BorderFrame>
+    <AppNavbar v-if="route.name !== 'login'" />
+    <main>
+      <RouterView />
+    </main>
+  </BorderFrame>
 </template>

@@ -1,9 +1,20 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
+import logoSrc from '@/assets/koleslaw-logo-woof-bubble.svg'
 
 const auth = useAuthStore()
 const router = useRouter()
+
+const scrolled = ref(false)
+
+function onScroll() {
+  scrolled.value = window.scrollY > 80
+}
+
+onMounted(() => window.addEventListener('scroll', onScroll, { passive: true }))
+onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 async function signOut() {
   await auth.logout()
@@ -12,52 +23,97 @@ async function signOut() {
 </script>
 
 <template>
-  <nav class="navbar">
-    <div class="navbar__left">
-      <RouterLink to="/dashboard" class="navbar__brand">Prompt Enhance</RouterLink>
-      <RouterLink to="/dashboard" class="navbar__link">Dashboard</RouterLink>
-      <RouterLink to="/keys" class="navbar__link">API Keys</RouterLink>
-    </div>
-    <div class="navbar__right" v-if="auth.user">
-      <span class="navbar__user">{{ auth.user.name }}</span>
-      <button class="navbar__signout" @click="signOut">Sign out</button>
+  <nav class="navbar" :class="{ 'navbar--scrolled': scrolled }">
+    <div class="navbar__inner">
+      <div class="navbar__left">
+        <RouterLink to="/" class="navbar__brand">
+          <img :src="logoSrc" alt="Koleslaw logo" class="navbar__logo" />
+          <span class="navbar__brand-text">Koleslaw</span>
+        </RouterLink>
+        <div class="navbar__links">
+          <RouterLink to="/" class="navbar__link">Get Started</RouterLink>
+          <RouterLink to="/dashboard" class="navbar__link">API Docs</RouterLink>
+          <RouterLink to="/keys" class="navbar__link">Tools</RouterLink>
+          <a href="#community" class="navbar__link">Community</a>
+        </div>
+      </div>
+      <div class="navbar__right">
+        <template v-if="auth.user">
+          <span class="navbar__user">{{ auth.user.name }}</span>
+          <button class="navbar__signout" @click="signOut">Sign out</button>
+        </template>
+        <RouterLink v-else to="/login" class="navbar__login-btn">Login</RouterLink>
+      </div>
     </div>
   </nav>
 </template>
 
 <style scoped>
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--wl-cream);
+  transition: box-shadow 0.3s, background-color 0.3s;
+}
+
+.navbar--scrolled {
+  background: rgba(245, 240, 232, 0.97);
+  box-shadow: 0 2px 12px rgba(42, 42, 42, 0.08);
+}
+
+.navbar__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid var(--color-border);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.875rem 2rem;
 }
 
 .navbar__left {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 2.5rem;
 }
 
 .navbar__brand {
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--color-heading);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   text-decoration: none;
+}
+
+.navbar__logo {
+  height: 32px;
+  width: auto;
+}
+
+.navbar__brand-text {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--color-heading);
+}
+
+.navbar__links {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
 }
 
 .navbar__link {
   color: var(--color-text);
   text-decoration: none;
-  font-size: 0.875rem;
-  padding: 0.25rem 0;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: color 0.2s;
 }
 
+.navbar__link:hover,
 .navbar__link.router-link-active {
-  color: var(--color-primary);
-  border-bottom: 2px solid var(--color-primary);
+  color: var(--color-heading);
 }
 
 .navbar__right {
@@ -73,15 +129,46 @@ async function signOut() {
 
 .navbar__signout {
   background: none;
-  border: none;
+  border: 1px solid var(--color-border-hover);
   color: var(--color-text);
+  font-family: var(--font-body);
   font-size: 0.875rem;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.375rem 1rem;
   border-radius: var(--radius);
+  transition: color 0.2s, border-color 0.2s;
 }
 
 .navbar__signout:hover {
   color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.navbar__login-btn {
+  display: inline-block;
+  padding: 0.375rem 1.25rem;
+  border: 1.5px solid var(--color-heading);
+  border-radius: var(--radius);
+  color: var(--color-heading);
+  text-decoration: none;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+
+.navbar__login-btn:hover {
+  background: var(--color-heading);
+  color: var(--wl-cream);
+}
+
+@media (max-width: 768px) {
+  .navbar__inner {
+    padding: 0.75rem 1rem;
+  }
+
+  .navbar__links {
+    display: none;
+  }
 }
 </style>

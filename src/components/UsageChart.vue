@@ -63,7 +63,7 @@ function shortDate(iso: string) {
 .chart__bar {
   width: 100%;
   max-width: 32px;
-  background: var(--color-primary);
+  background: var(--wl-navy);
   border-radius: var(--radius) var(--radius) 0 0;
   min-height: 2px;
   transition: height 0.3s ease;

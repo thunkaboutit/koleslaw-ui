@@ -65,6 +65,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   background: none;
   border: none;
   font-size: 1.5rem;
+  font-family: var(--font-body);
   cursor: pointer;
   color: var(--color-text);
   line-height: 1;

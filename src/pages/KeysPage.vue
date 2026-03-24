@@ -44,7 +44,7 @@ async function copyKey() {
 </script>
 
 <template>
-  <div>
+  <div class="keys-page">
     <div class="page-header">
       <h1>API Keys</h1>
       <BaseButton @click="showCreateModal = true">Create Key</BaseButton>
@@ -136,6 +136,12 @@ async function copyKey() {
 </template>
 
 <style scoped>
+.keys-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
 .page-header {
   display: flex;
   align-items: center;
@@ -144,8 +150,9 @@ async function copyKey() {
 }
 
 .page-header h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 900;
   color: var(--color-heading);
 }
 
@@ -158,7 +165,7 @@ async function copyKey() {
 }
 
 .new-key-banner__label {
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 0.5rem;
   color: var(--color-heading);
 }
@@ -184,6 +191,7 @@ async function copyKey() {
 .new-key-banner__dismiss {
   background: none;
   border: none;
+  font-family: var(--font-body);
   font-size: 0.8125rem;
   color: var(--color-text);
   cursor: pointer;
@@ -203,8 +211,9 @@ async function copyKey() {
 .keys-table th {
   text-align: left;
   padding: 0.75rem 1rem;
+  font-family: var(--font-body);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-text);
@@ -214,7 +223,7 @@ async function copyKey() {
 .form-label {
   display: block;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   margin-bottom: 0.375rem;
   color: var(--color-heading);
 }
@@ -222,10 +231,11 @@ async function copyKey() {
 .form-input {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-hover);
   border-radius: var(--radius);
   background: var(--color-background);
   color: var(--color-text);
+  font-family: var(--font-body);
   font-size: 0.875rem;
 }
 

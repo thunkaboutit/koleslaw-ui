@@ -5,6 +5,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/',
+      name: 'home',
+      component: () => import('@/pages/HomePage.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/pages/LoginPage.vue'),
@@ -19,10 +25,6 @@ const router = createRouter({
       path: '/keys',
       name: 'keys',
       component: () => import('@/pages/KeysPage.vue'),
-    },
-    {
-      path: '/',
-      redirect: '/dashboard',
     },
   ],
 })

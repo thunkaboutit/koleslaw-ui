@@ -31,8 +31,9 @@ defineProps<{
 }
 
 .card__title {
+  font-family: var(--font-heading);
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-heading);
 }
 

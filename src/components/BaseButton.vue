@@ -16,15 +16,17 @@ defineProps<{
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid transparent;
+  padding: 0.5rem 1.25rem;
+  border: 2px solid transparent;
   border-radius: var(--radius);
+  font-family: var(--font-body);
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition:
-    background-color 0.15s,
-    border-color 0.15s;
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .btn:disabled {
@@ -34,30 +36,34 @@ defineProps<{
 
 .btn--primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--wl-cream);
+  border-color: var(--color-primary);
 }
 
 .btn--primary:hover:not(:disabled) {
   background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .btn--secondary {
   background: transparent;
   color: var(--color-text);
-  border-color: var(--color-border);
+  border-color: var(--color-border-hover);
 }
 
 .btn--secondary:hover:not(:disabled) {
-  border-color: var(--color-border-hover);
-  background: var(--color-background-soft);
+  border-color: var(--color-heading);
+  color: var(--color-heading);
 }
 
 .btn--danger {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--wl-cream);
+  border-color: var(--color-danger);
 }
 
 .btn--danger:hover:not(:disabled) {
   background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
 }
 </style>
