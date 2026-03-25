@@ -4,14 +4,10 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ApiError } from '@/api/client'
 import BaseButton from '@/components/BaseButton.vue'
-import mascotLeftSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
-import mascotRightSrc from '@/assets/koleslaw-logo-mascot-woof-mirrored.svg'
+import mascotSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
 
 const auth = useAuthStore()
 const router = useRouter()
-
-const peekFromRight = Math.random() < 0.5
-const peekSrc = peekFromRight ? mascotRightSrc : mascotLeftSrc
 
 const username = ref('')
 const password = ref('')
@@ -51,9 +47,9 @@ function loginWithGitHub() {
     <div class="spot spot--5" aria-hidden="true"></div>
 
     <!-- Peeking mascot -->
-    <div class="peek" :class="peekFromRight ? 'peek--right' : 'peek--left'" aria-hidden="true">
+    <div class="peek" aria-hidden="true">
       <img
-        :src="peekSrc"
+        :src="mascotSrc"
         alt=""
         class="peek__img"
       />
@@ -175,18 +171,10 @@ function loginWithGitHub() {
 .peek {
   position: fixed;
   bottom: 0;
+  left: -200px;
   z-index: 2;
   pointer-events: none;
-}
-
-.peek--right {
-  right: -200px;
-  animation: peekFromRight 12s ease-in-out 3s infinite;
-}
-
-.peek--left {
-  left: -200px;
-  animation: peekFromLeft 12s ease-in-out 3s infinite;
+  animation: peekFromLeft 45s ease-in-out 8s infinite;
 }
 
 .peek__img {
@@ -195,19 +183,11 @@ function loginWithGitHub() {
   opacity: 0.85;
 }
 
-@keyframes peekFromRight {
-  0%   { transform: translateX(0); }
-  8%   { transform: translateX(-160px); }
-  15%  { transform: translateX(-160px); }
-  22%  { transform: translateX(0); }
-  100% { transform: translateX(0); }
-}
-
 @keyframes peekFromLeft {
   0%   { transform: translateX(0); }
-  8%   { transform: translateX(160px); }
-  15%  { transform: translateX(160px); }
-  22%  { transform: translateX(0); }
+  3%   { transform: translateX(160px); }
+  6%   { transform: translateX(160px); }
+  9%   { transform: translateX(0); }
   100% { transform: translateX(0); }
 }
 
