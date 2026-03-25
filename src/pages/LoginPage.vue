@@ -4,9 +4,14 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ApiError } from '@/api/client'
 import BaseButton from '@/components/BaseButton.vue'
+import mascotLeftSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
+import mascotRightSrc from '@/assets/koleslaw-logo-mascot-woof-mirrored.svg'
 
 const auth = useAuthStore()
 const router = useRouter()
+
+const peekFromRight = Math.random() < 0.5
+const peekSrc = peekFromRight ? mascotRightSrc : mascotLeftSrc
 
 const username = ref('')
 const password = ref('')
@@ -38,6 +43,22 @@ function loginWithGitHub() {
 
 <template>
   <div class="login">
+    <!-- Cow-spot background blobs -->
+    <div class="spot spot--1" aria-hidden="true"></div>
+    <div class="spot spot--2" aria-hidden="true"></div>
+    <div class="spot spot--3" aria-hidden="true"></div>
+    <div class="spot spot--4" aria-hidden="true"></div>
+    <div class="spot spot--5" aria-hidden="true"></div>
+
+    <!-- Peeking mascot -->
+    <div class="peek" :class="peekFromRight ? 'peek--right' : 'peek--left'" aria-hidden="true">
+      <img
+        :src="peekSrc"
+        alt=""
+        class="peek__img"
+      />
+    </div>
+
     <div class="login__card">
       <h1 class="login__title">Koleslaw</h1>
       <p class="login__subtitle">Developer Portal</p>
@@ -92,15 +113,108 @@ function loginWithGitHub() {
 
 <style scoped>
 .login {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   background: var(--color-background);
   padding: 2rem;
+  overflow: hidden;
 }
 
+/* ─── Cow-spot background blobs ─── */
+.spot {
+  position: absolute;
+  border-radius: 50% 40% 55% 45% / 45% 50% 40% 55%;
+  background: rgba(42, 42, 42, 0.06);
+  z-index: 0;
+}
+
+.spot--1 {
+  width: 260px;
+  height: 200px;
+  top: -40px;
+  left: -60px;
+  border-radius: 50% 35% 60% 40% / 40% 55% 35% 60%;
+}
+
+.spot--2 {
+  width: 180px;
+  height: 160px;
+  top: 10%;
+  right: -30px;
+  border-radius: 45% 55% 40% 60% / 55% 40% 60% 45%;
+}
+
+.spot--3 {
+  width: 220px;
+  height: 180px;
+  bottom: 15%;
+  left: 5%;
+  border-radius: 55% 45% 50% 40% / 40% 50% 55% 45%;
+}
+
+.spot--4 {
+  width: 140px;
+  height: 120px;
+  bottom: -20px;
+  right: 15%;
+  border-radius: 40% 60% 45% 55% / 55% 45% 50% 40%;
+}
+
+.spot--5 {
+  width: 100px;
+  height: 90px;
+  top: 35%;
+  left: 20%;
+  border-radius: 60% 40% 55% 45% / 45% 55% 40% 60%;
+}
+
+/* ─── Peeking mascot ─── */
+.peek {
+  position: fixed;
+  bottom: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.peek--right {
+  right: -200px;
+  animation: peekFromRight 12s ease-in-out 3s infinite;
+}
+
+.peek--left {
+  left: -200px;
+  animation: peekFromLeft 12s ease-in-out 3s infinite;
+}
+
+.peek__img {
+  width: 200px;
+  height: auto;
+  opacity: 0.85;
+}
+
+@keyframes peekFromRight {
+  0%   { transform: translateX(0); }
+  8%   { transform: translateX(-160px); }
+  15%  { transform: translateX(-160px); }
+  22%  { transform: translateX(0); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes peekFromLeft {
+  0%   { transform: translateX(0); }
+  8%   { transform: translateX(160px); }
+  15%  { transform: translateX(160px); }
+  22%  { transform: translateX(0); }
+  100% { transform: translateX(0); }
+}
+
+/* ─── Login card ─── */
 .login__card {
+  position: relative;
+  z-index: 1;
   text-align: center;
   background: var(--color-card);
   border: 1px solid var(--color-border);
@@ -108,6 +222,7 @@ function loginWithGitHub() {
   padding: 3rem 2.5rem;
   max-width: 400px;
   width: 100%;
+  box-shadow: 0 4px 24px rgba(42, 42, 42, 0.06);
 }
 
 .login__title {
@@ -206,5 +321,17 @@ function loginWithGitHub() {
 
 .login__icon {
   flex-shrink: 0;
+}
+
+/* ─── Mobile adjustments ─── */
+@media (max-width: 768px) {
+  .peek {
+    display: none;
+  }
+
+  .spot--1 { width: 160px; height: 120px; }
+  .spot--2 { width: 120px; height: 100px; }
+  .spot--3 { width: 140px; height: 110px; }
+  .spot--5 { display: none; }
 }
 </style>
