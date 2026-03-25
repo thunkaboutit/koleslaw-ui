@@ -2,7 +2,6 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import logoSrc from '@/assets/koleslaw-logo-woof-bubble.svg'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -27,7 +26,6 @@ async function signOut() {
     <div class="navbar__inner">
       <div class="navbar__left">
         <RouterLink to="/" class="navbar__brand">
-          <img :src="logoSrc" alt="Koleslaw logo" class="navbar__logo" />
           <span class="navbar__brand-text">Koleslaw</span>
         </RouterLink>
         <div class="navbar__links">
