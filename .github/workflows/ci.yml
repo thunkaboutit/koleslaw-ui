@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Restore SSH remote
+        run: git remote set-url origin git@github.com:thunkaboutit/koleslaw-developer-portal.git
+
       - uses: pnpm/action-setup@v4
         with:
           version: latest
@@ -28,6 +31,9 @@ jobs:
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v5
+
+      - name: Restore SSH remote
+        run: git remote set-url origin git@github.com:thunkaboutit/koleslaw-developer-portal.git
 
       - uses: pnpm/action-setup@v4
         with:
@@ -47,6 +53,9 @@ jobs:
     needs: [ lint, type-check ]
     steps:
       - uses: actions/checkout@v5
+
+      - name: Restore SSH remote
+        run: git remote set-url origin git@github.com:thunkaboutit/koleslaw-developer-portal.git
 
       - uses: pnpm/action-setup@v4
         with:
