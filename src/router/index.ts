@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/chat',
+      name: 'chat',
+      component: () => import('@/pages/ChatPage.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/pages/DashboardPage.vue'),

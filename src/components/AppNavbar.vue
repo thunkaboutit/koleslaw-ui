@@ -32,7 +32,7 @@ async function signOut() {
           <RouterLink to="/" class="navbar__link">Get Started</RouterLink>
           <RouterLink to="/dashboard" class="navbar__link">API Docs</RouterLink>
           <RouterLink to="/keys" class="navbar__link">Tools</RouterLink>
-          <a href="#community" class="navbar__link">Community</a>
+          <RouterLink to="/chat" class="navbar__link">Enhance</RouterLink>
         </div>
       </div>
       <div class="navbar__right">
