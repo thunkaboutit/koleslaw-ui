@@ -57,3 +57,25 @@ export interface UsageResponse {
   period_start: string
   period_end: string
 }
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatRequest {
+  messages: ChatMessage[]
+  model?: string
+  context?: string
+}
+
+export interface ChatChunk {
+  delta: string
+  finish_reason: string | null
+}
+
+export interface ChatResponse {
+  message: ChatMessage
+  model_used: string
+  usage: { input_tokens: number; output_tokens: number }
+}
