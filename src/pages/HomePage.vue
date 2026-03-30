@@ -162,7 +162,7 @@ function setSectionRef(idx: number) {
         <div class="hero__content">
           <h1 class="hero__title">
             Stop Re-prompting.<br />
-            Start One-shotting.
+            Start Kole-Woofing.
           </h1>
           <p class="hero__subtitle">
             Koleslaw takes your rough prompt and turns it into exactly what AI
