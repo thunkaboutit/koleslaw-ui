@@ -366,7 +366,7 @@ function setSectionRef(idx: number) {
           <a href="#contact" class="footer__link">Contact Us</a>
         </div>
         <div class="footer__right">
-          <span class="footer__copy">Copyright &copy; 2022. All Koleslaw</span>
+          <span class="footer__copy">Copyright &copy; 2025-2026. All Koleslaw</span>
           <img :src="logoSrc" alt="Koleslaw logo" class="footer__logo" />
         </div>
       </div>
