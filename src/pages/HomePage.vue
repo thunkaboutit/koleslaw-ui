@@ -73,6 +73,13 @@ watch(
   },
 )
 
+const ENHANCE_PREFIX_RE = /^(enhance|improve|rewrite|refine|rephrase|fix|optimize|polish|upgrade|rework)\b/i
+
+function prefixPrompt(text: string): string {
+  if (ENHANCE_PREFIX_RE.test(text)) return text
+  return `Enhance this prompt:\n\n${text}`
+}
+
 async function submitPrompt() {
   const text = userInput.value.trim()
   if (!text || chat.sending) return
@@ -88,7 +95,7 @@ async function submitPrompt() {
 
   nextTick(() => enhanceTextarea.value?.focus())
 
-  await chat.send(text)
+  await chat.send(prefixPrompt(text))
 }
 
 async function copyToClipboard() {
