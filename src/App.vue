@@ -14,5 +14,5 @@ const route = useRoute()
       <RouterView />
     </main>
   </BorderFrame>
-  <ChatPanel v-if="route.name !== 'login'" />
+  <!-- <ChatPanel v-if="route.name !== 'login'" /> -->
 </template>
