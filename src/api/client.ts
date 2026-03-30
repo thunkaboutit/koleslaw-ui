@@ -1,4 +1,5 @@
 const API_BASE = ''
+const PUBLIC_API_KEY = 'pk_live_fNuYW07Bf16zLFLbghxSPERYV4QS1SWF4-OuLJ5JcCE'
 
 export class ApiError extends Error {
   constructor(
@@ -15,6 +16,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      'X-API-Key': PUBLIC_API_KEY,
       ...options.headers,
     },
     ...options,
