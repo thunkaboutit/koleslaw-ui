@@ -17,11 +17,16 @@
 .border-frame {
   position: relative;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .border-frame__content {
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 /*

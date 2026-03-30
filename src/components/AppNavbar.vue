@@ -29,10 +29,7 @@ async function signOut() {
           <span class="navbar__brand-text">Koleslaw</span>
         </RouterLink>
         <div class="navbar__links">
-          <RouterLink to="/" class="navbar__link">Get Started</RouterLink>
-          <RouterLink to="/dashboard" class="navbar__link">API Docs</RouterLink>
           <RouterLink to="/keys" class="navbar__link">Tools</RouterLink>
-          <RouterLink to="/chat" class="navbar__link">Enhance</RouterLink>
         </div>
       </div>
       <div class="navbar__right">
@@ -64,7 +61,6 @@ async function signOut() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1200px;
   margin: 0 auto;
   padding: 0.875rem 2rem;
 }

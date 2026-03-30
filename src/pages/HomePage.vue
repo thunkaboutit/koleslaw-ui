@@ -1,8 +1,96 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed, watch, nextTick } from 'vue'
 import mascotSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
 import logoSrc from '@/assets/koleslaw-logo-woof-bubble.svg'
+import { useChatStore } from '@/stores/chat'
+import BaseModal from '@/components/BaseModal.vue'
 
+const chat = useChatStore()
+
+/* ── Prompt usage tracking ── */
+const PROMPT_COUNT_KEY = 'koleslaw-prompt-count'
+const MAX_PROMPTS = 3
+const promptCount = ref(parseInt(localStorage.getItem(PROMPT_COUNT_KEY) ?? '0', 10))
+const showLimitModal = ref(false)
+
+/* ── Local UI state ── */
+const userInput = ref('')
+const copied = ref(false)
+const responseRef = ref<HTMLElement | null>(null)
+const enhanceTextarea = ref<HTMLTextAreaElement | null>(null)
+
+function autoResize() {
+  const el = enhanceTextarea.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+const lastEnhancedPrompt = ref('')
+
+const enhancedPrompt = computed(
+  () => chat.streamingContent || lastEnhancedPrompt.value,
+)
+const hasResponse = computed(() => lastEnhancedPrompt.value.length > 0 && !chat.sending)
+const limitReached = computed(() => promptCount.value >= MAX_PROMPTS)
+
+/* Auto-scroll as streamed content arrives */
+watch(
+  () => chat.streamingContent,
+  () => {
+    if (chat.sending) {
+      nextTick(() => {
+        responseRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      })
+    }
+  },
+)
+
+/* Capture completed response and increment counter */
+watch(
+  () => chat.sending,
+  (sending, wasSending) => {
+    if (wasSending && !sending) {
+      const lastAssistant = [...chat.messages].reverse().find((m) => m.role === 'assistant')
+      if (lastAssistant) {
+        lastEnhancedPrompt.value = lastAssistant.content
+        promptCount.value++
+        localStorage.setItem(PROMPT_COUNT_KEY, String(promptCount.value))
+      }
+    }
+  },
+)
+
+async function submitPrompt() {
+  const text = userInput.value.trim()
+  if (!text || chat.sending) return
+  if (limitReached.value) {
+    showLimitModal.value = true
+    return
+  }
+  lastEnhancedPrompt.value = ''
+  copied.value = false
+  await chat.send(text)
+}
+
+async function copyToClipboard() {
+  const text = enhancedPrompt.value
+  try {
+    await navigator.clipboard.writeText(text)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
+  } catch {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
+  }
+}
+
+/* ── Section reveal animation ── */
 const sections = ref<HTMLElement[]>([])
 const revealed = ref(new Set<number>())
 
@@ -73,147 +161,203 @@ function setSectionRef(idx: number) {
         </div>
         <div class="hero__content">
           <h1 class="hero__title">
-            Unexpected Connections.<br />
-            Dependable Deliveries.
+            Stop Re-prompting.<br />
+            Start One-shotting.
           </h1>
           <p class="hero__subtitle">
-            Connecting your systems when the language doesn't match.
-            Meet Koleslaw, your reliable (if quirky) integration portal.
+            Koleslaw takes your rough prompt and turns it into exactly what AI
+            needs to hear. Better input, better output — it's not rocket science.
+            It's a barking cow.
           </p>
-          <div class="hero__actions">
-            <RouterLink to="/dashboard" class="btn btn--filled">Explore API Docs</RouterLink>
-            <RouterLink to="/keys" class="btn btn--outlined">Start Integrations</RouterLink>
+          <div class="hero__flow">
+            <div class="flow-step">
+              <span class="flow-step__icon flow-step__icon--rough" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <rect x="3" y="5" width="22" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path d="M8 11h12M8 15h8M8 19h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2"/>
+                </svg>
+              </span>
+              <span class="flow-step__label">Your prompt</span>
+            </div>
+            <span class="flow-arrow" aria-hidden="true">
+              <svg width="24" height="14" viewBox="0 0 24 14" fill="none">
+                <path d="M0 7h20M16 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <div class="flow-step">
+              <span class="flow-step__icon flow-step__icon--magic" aria-hidden="true">
+                <img :src="logoSrc" alt="" class="flow-step__logo" />
+              </span>
+              <span class="flow-step__label">Woof magic</span>
+            </div>
+            <span class="flow-arrow" aria-hidden="true">
+              <svg width="24" height="14" viewBox="0 0 24 14" fill="none">
+                <path d="M0 7h20M16 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <div class="flow-step">
+              <span class="flow-step__icon flow-step__icon--enhanced" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <rect x="3" y="5" width="22" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path d="M8 11h12M8 15h10M8 19h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M19 3l2 2-2 2" stroke="var(--wl-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M23 7l1 1-1 1" stroke="var(--wl-gold)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="flow-step__label">Woofed up prompt</span>
+            </div>
+            <span class="flow-arrow" aria-hidden="true">
+              <svg width="24" height="14" viewBox="0 0 24 14" fill="none">
+                <path d="M0 7h20M16 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <div class="flow-step">
+              <span class="flow-step__icon flow-step__icon--paste" aria-hidden="true">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path d="M9 14l3 3 7-7" stroke="var(--wl-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="flow-step__label">Paste anywhere</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Section divider -->
-    <div class="section-divider">
-      <span class="section-divider__ornament"></span>
-    </div>
-
-    <!-- Features Section -->
+    <!-- Enhance Section -->
     <section
       :ref="setSectionRef(1)"
-      class="features"
+      class="enhance"
       :class="{ 'animate-in delay-1': revealed.has(1) }"
     >
-      <h2 class="features__title">Features</h2>
-      <div class="features__grid">
-        <div class="feature-card">
-          <div class="feature-card__icon" aria-hidden="true">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <rect x="6" y="10" width="36" height="28" rx="4" stroke="#1a2744" stroke-width="2" fill="none"/>
-              <path d="M14 22l4 4-4 4M22 30h8" stroke="#c9a84c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+      <div class="enhance__container">
+        <!-- Usage indicator -->
+        <div class="enhance__usage">
+          <span class="enhance__usage-text">
+            {{ promptCount }} / {{ MAX_PROMPTS }} free prompts used
+          </span>
+          <div class="enhance__usage-bar">
+            <div
+              class="enhance__usage-fill"
+              :style="{ width: `${(promptCount / MAX_PROMPTS) * 100}%` }"
+            />
           </div>
-          <h3 class="feature-card__label">Robust APIs</h3>
-          <p class="feature-card__desc">Battle-tested endpoints that handle anything you throw at them.</p>
         </div>
-        <div class="feature-card">
-          <div class="feature-card__icon" aria-hidden="true">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <rect x="8" y="14" width="14" height="20" rx="2" stroke="#1a2744" stroke-width="2" fill="none"/>
-              <rect x="26" y="14" width="14" height="20" rx="2" stroke="#1a2744" stroke-width="2" fill="none"/>
-              <path d="M22 24h4" stroke="#c9a84c" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="15" cy="20" r="2" fill="#c9a84c"/>
-              <circle cx="33" cy="20" r="2" fill="#c9a84c"/>
-            </svg>
-          </div>
-          <h3 class="feature-card__label">Comprehensive SDKs</h3>
-          <p class="feature-card__desc">Libraries for every major language, so you can moo in your native tongue.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-card__icon" aria-hidden="true">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <path d="M10 38V14a4 4 0 014-4h20a4 4 0 014 4v24" stroke="#1a2744" stroke-width="2" fill="none"/>
-              <path d="M6 38h36" stroke="#1a2744" stroke-width="2" stroke-linecap="round"/>
-              <path d="M18 22l3 3 7-7" stroke="#c9a84c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <h3 class="feature-card__label">Testing Sandbox</h3>
-          <p class="feature-card__desc">A safe pasture to test your integrations before going live.</p>
-        </div>
-      </div>
-    </section>
 
-    <!-- Section divider -->
-    <div class="section-divider">
-      <span class="section-divider__ornament"></span>
-    </div>
-
-    <!-- Promise Section -->
-    <section
-      :ref="setSectionRef(2)"
-      class="promise"
-      :class="{ 'animate-in delay-2': revealed.has(2) }"
-    >
-      <div class="promise__inner">
-        <div class="promise__content">
-          <h2 class="promise__title">The Woof Promise</h2>
-          <ul class="promise__list">
-            <li class="promise__item">
-              <span class="promise__icon" aria-hidden="true">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="#c9a84c" stroke-width="2"/>
-                  <path d="M12 6v6l4 2" stroke="#1a2744" stroke-width="2" stroke-linecap="round"/>
+        <!-- Input area -->
+        <div class="enhance__input-area">
+          <textarea
+            ref="enhanceTextarea"
+            v-model="userInput"
+            class="enhance__input"
+            placeholder="How can I help you today?"
+            rows="2"
+            :disabled="chat.sending"
+            @input="autoResize"
+            @keydown.enter.exact.prevent="submitPrompt"
+          />
+          <div class="enhance__toolbar">
+            <div class="enhance__toolbar-left">
+              <button class="enhance__tool-btn" aria-label="Attach file">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-              </span>
-              <div>
-                <strong>99.9% Uptime</strong>
-                <span class="promise__aside"> (Moo is for milk, uptime is for you.)</span>
-              </div>
-            </li>
-            <li class="promise__item">
-              <span class="promise__icon" aria-hidden="true">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke="#c9a84c" stroke-width="2" stroke-linecap="round"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke="#1a2744" stroke-width="2" fill="none"/>
-                </svg>
-              </span>
-              <div>
-                <strong>Dedicated Support</strong>
-                <span class="promise__aside"> (We don't just bark, we solve.)</span>
-              </div>
-            </li>
-            <li class="promise__item">
-              <span class="promise__icon" aria-hidden="true">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#c9a84c" stroke-width="2" fill="none" stroke-linecap="round"/>
-                  <path d="M13.73 21a2 2 0 01-3.46 0" stroke="#1a2744" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-              </span>
-              <div>
-                <strong>Zero Unexpected Surprises</strong>
-                <span class="promise__aside"> (Except this cow.)</span>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <div class="promise__terminal">
-          <div class="terminal">
-            <div class="terminal__bar">
-              <span class="terminal__dot terminal__dot--red"></span>
-              <span class="terminal__dot terminal__dot--yellow"></span>
-              <span class="terminal__dot terminal__dot--green"></span>
+              </button>
             </div>
-            <pre class="terminal__code"><code><span class="t-keyword">export</span> <span class="t-string">https://koleslaw.ai/connect/</span>{
-  <span class="t-key">request</span>: {
-    <span class="t-string">'key'</span>: <span class="t-value">'KEY_KEY'</span>,
-    <span class="t-string">'value'</span>: <span class="t-value">'$SHORT_MORE_VALUE'</span>
-  }
-}</code></pre>
+            <div class="enhance__toolbar-right">
+              <button class="enhance__tool-btn" aria-label="Voice input">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <rect x="7" y="2" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                  <path d="M4 10a6 6 0 0012 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <path d="M10 16v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <button
+                v-if="chat.sending"
+                class="enhance__send enhance__send--cancel"
+                @click="chat.cancelStream"
+                aria-label="Cancel"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <rect x="4" y="4" width="12" height="12" rx="2" fill="currentColor"/>
+                </svg>
+              </button>
+              <button
+                v-else
+                class="enhance__send"
+                :disabled="!userInput.trim()"
+                @click="submitPrompt"
+                aria-label="Enhance"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M3 10h14M11 4l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div v-if="chat.sending && !enhancedPrompt" class="enhance__loading">
+          <img :src="mascotSrc" alt="Woof is thinking..." class="enhance__mascot" />
+          <p class="enhance__loading-text">Woof is enhancing your prompt&hellip;</p>
+        </div>
+
+        <!-- Error message -->
+        <div v-if="chat.error" class="enhance__error">
+          <p>{{ chat.error }}</p>
+        </div>
+
+        <!-- Streamed response -->
+        <div
+          v-if="enhancedPrompt"
+          ref="responseRef"
+          class="enhance__response animate-in"
+        >
+          <div class="enhance__response-header">
+            <h3 class="enhance__response-title">Enhanced Prompt</h3>
+            <button
+              v-if="hasResponse"
+              class="enhance__copy-btn"
+              :class="{ 'enhance__copy-btn--copied': copied }"
+              @click="copyToClipboard"
+            >
+              {{ copied ? 'Copied!' : 'Copy' }}
+            </button>
+          </div>
+          <div class="enhance__response-body">
+            <p class="enhance__response-text">{{ enhancedPrompt }}</p>
+            <span v-if="chat.sending" class="enhance__cursor" />
           </div>
         </div>
       </div>
     </section>
+
+    <!-- Usage limit modal -->
+    <BaseModal v-if="showLimitModal" @close="showLimitModal = false">
+      <template #header>
+        <h3>Free Limit Reached</h3>
+      </template>
+      <p>
+        You've used all <strong>{{ MAX_PROMPTS }}</strong> free prompt enhancements.
+        Sign up for an account to continue enhancing your prompts with Woof.
+      </p>
+      <template #footer>
+        <RouterLink to="/login" class="enhance__btn enhance__btn--submit">
+          Sign Up
+        </RouterLink>
+        <button class="enhance__btn enhance__btn--cancel" @click="showLimitModal = false">
+          Maybe Later
+        </button>
+      </template>
+    </BaseModal>
 
     <!-- Footer -->
     <footer
-      :ref="setSectionRef(3)"
+      :ref="setSectionRef(2)"
       class="footer"
-      :class="{ 'animate-in delay-3': revealed.has(3) }"
+      :class="{ 'animate-in delay-2': revealed.has(2) }"
     >
       <div class="footer__inner">
         <div class="footer__links">
@@ -231,10 +375,17 @@ function setSectionRef(idx: number) {
 </template>
 
 <style scoped>
+.spacer {
+  flex-grow: 1;
+}
+
 .home {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ─── Hero ─── */
@@ -341,187 +492,322 @@ function setSectionRef(idx: number) {
   max-width: 440px;
 }
 
-.hero__actions {
+/* ─── Process Flow ─── */
+.hero__flow {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-/* CTA Buttons */
-.btn {
-  display: inline-flex;
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  text-align: center;
+}
+
+.flow-step__icon {
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.75rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: var(--wl-navy);
+}
+
+.flow-step__icon--rough {
+  background: var(--color-border);
+  color: var(--wl-warm-gray);
+}
+
+.flow-step__icon--magic {
+  background: rgba(201, 168, 76, 0.12);
+  border-radius: 12px;
+}
+
+.flow-step__logo {
+  width: 32px;
+  height: 32px;
+}
+
+.flow-step__icon--enhanced {
+  background: rgba(26, 39, 68, 0.08);
+  color: var(--wl-navy);
+}
+
+.flow-step__icon--paste {
+  background: rgba(201, 168, 76, 0.12);
+  color: var(--wl-navy);
+}
+
+.flow-step__label {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--wl-warm-gray);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.flow-arrow {
+  color: var(--color-border-hover);
+  flex-shrink: 0;
+  margin-bottom: 1.25rem;
+}
+
+/* ─── Enhance ─── */
+.enhance {
+  padding: 2rem 0;
+}
+
+.enhance__container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.enhance__usage {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.enhance__usage-text {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--wl-warm-gray);
+  white-space: nowrap;
+}
+
+.enhance__usage-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.enhance__usage-fill {
+  height: 100%;
+  background: var(--wl-gold);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.enhance__input-area {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 1.25rem;
+  padding: 0.875rem 1rem 0.5rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.enhance__input-area:focus-within {
+  border-color: var(--wl-navy);
+  box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+}
+
+.enhance__input {
+  width: 100%;
+  border: none;
+  background: transparent;
   font-family: var(--font-body);
   font-size: 1rem;
-  font-weight: 600;
-  border-radius: var(--radius);
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.25s, color 0.25s, border-color 0.25s;
+  color: var(--color-heading);
+  line-height: 1.5;
+  resize: none;
+  overflow: hidden;
+  padding: 0;
 }
 
-.btn--filled {
-  background: var(--wl-navy);
-  color: var(--wl-cream);
-  border: 2px solid var(--wl-navy);
+.enhance__input::placeholder {
+  color: var(--wl-warm-gray-light);
 }
 
-.btn--filled:hover {
-  background: var(--wl-navy-light);
-  border-color: var(--wl-navy-light);
-  color: var(--wl-cream);
+.enhance__input:focus {
+  outline: none;
 }
 
-.btn--outlined {
+.enhance__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+}
+
+.enhance__toolbar-left,
+.enhance__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.enhance__tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
   background: transparent;
-  color: var(--wl-navy);
-  border: 2px solid var(--wl-navy);
+  color: var(--wl-warm-gray);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
 }
 
-.btn--outlined:hover {
+.enhance__tool-btn:hover {
+  color: var(--color-heading);
+  background: var(--color-border);
+}
+
+.enhance__send {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
   background: var(--wl-navy);
   color: var(--wl-cream);
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
 }
 
-/* ─── Features ─── */
-.features {
-  text-align: center;
-  padding: 1rem 0;
+.enhance__send:hover:not(:disabled) {
+  background: var(--wl-navy-light);
 }
 
-.features__title {
-  font-size: 2rem;
-  margin-bottom: 2.5rem;
+.enhance__send:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
-.features__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+.enhance__send--cancel {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border-hover);
 }
 
-.feature-card {
+.enhance__send--cancel:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.enhance__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem 0;
+}
+
+.enhance__mascot {
+  width: 80px;
+  height: auto;
+  animation: bob 2s ease-in-out infinite;
+}
+
+.enhance__loading-text {
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--wl-warm-gray);
+  font-size: 0.9375rem;
+}
+
+.enhance__error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+}
+
+.enhance__response {
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 2rem 1.5rem;
-  transition: transform 0.25s, box-shadow 0.25s;
-}
-
-.feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(42, 42, 42, 0.08);
-}
-
-.feature-card__icon {
-  margin-bottom: 1rem;
-}
-
-.feature-card__label {
-  font-family: var(--font-heading);
-  font-size: 1.125rem;
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: var(--color-heading);
-}
-
-.feature-card__desc {
-  font-size: 0.9375rem;
-  color: var(--color-text);
-  line-height: 1.5;
-}
-
-/* ─── Promise ─── */
-.promise {
-  padding: 1rem 0;
-}
-
-.promise__inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-  align-items: start;
-}
-
-.promise__title {
-  font-size: 2rem;
-  margin-bottom: 1.75rem;
-}
-
-.promise__list {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.promise__item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-}
-
-.promise__icon {
-  flex-shrink: 0;
-  margin-top: 0.125rem;
-}
-
-.promise__item strong {
-  font-weight: 700;
-  color: var(--color-heading);
-}
-
-.promise__aside {
-  color: var(--wl-warm-gray);
-  font-style: italic;
-}
-
-/* Terminal code block */
-.terminal {
-  background: var(--wl-charcoal);
-  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
 }
 
-.terminal__bar {
+.enhance__response-header {
   display: flex;
-  gap: 6px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
-.terminal__dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+.enhance__response-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-heading);
 }
 
-.terminal__dot--red { background: #ff5f57; }
-.terminal__dot--yellow { background: #febc2e; }
-.terminal__dot--green { background: #28c840; }
-
-.terminal__code {
-  padding: 1.25rem 1.5rem 1.5rem;
-  margin: 0;
+.enhance__copy-btn {
+  background: transparent;
+  border: 1px solid var(--color-border-hover);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.75rem;
   font-family: var(--font-mono);
-  font-size: 0.875rem;
-  line-height: 1.7;
-  color: #e0ddd5;
-  overflow-x: auto;
+  font-size: 0.75rem;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
-.t-keyword { color: var(--wl-code-blue); }
-.t-string { color: var(--wl-code-green); }
-.t-key { color: #e0ddd5; }
-.t-value { color: var(--wl-code-gold); }
+.enhance__copy-btn:hover {
+  border-color: var(--wl-navy);
+  color: var(--wl-navy);
+}
+
+.enhance__copy-btn--copied {
+  border-color: var(--color-success);
+  color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.enhance__response-body {
+  padding: 1.25rem;
+  position: relative;
+}
+
+.enhance__response-text {
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--color-heading);
+  white-space: pre-wrap;
+}
+
+.enhance__cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--wl-gold);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.8s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 
 /* ─── Footer ─── */
 .footer {
-  margin-top: var(--section-gap);
+  margin-top: auto;
   padding: 1.5rem 0 2rem;
   border-top: 1px solid var(--color-border-hover);
 }
@@ -590,22 +876,13 @@ function setSectionRef(idx: number) {
     margin-right: auto;
   }
 
-  .hero__actions {
+  .hero__flow {
     justify-content: center;
+    flex-wrap: wrap;
   }
 
   .hero__title {
     font-size: 2rem;
-  }
-
-  .features__grid {
-    grid-template-columns: 1fr;
-    max-width: 360px;
-    margin: 0 auto;
-  }
-
-  .promise__inner {
-    grid-template-columns: 1fr;
   }
 
   .footer__inner {
