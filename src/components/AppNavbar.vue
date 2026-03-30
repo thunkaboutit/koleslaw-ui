@@ -61,6 +61,7 @@ async function signOut() {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 0.875rem 2rem;
 }
