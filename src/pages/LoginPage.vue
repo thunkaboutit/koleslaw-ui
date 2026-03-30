@@ -56,7 +56,7 @@ function loginWithGitHub() {
     </div>
 
     <div class="login__card">
-      <h1 class="login__title">Koleslaw</h1>
+      <h1 class="login__title"><RouterLink to="/" class="login__title-link">Koleslaw</RouterLink></h1>
       <p class="login__subtitle">Developer Portal</p>
 
       <form class="login__form" @submit.prevent="handleLogin">
@@ -211,6 +211,16 @@ function loginWithGitHub() {
   font-weight: 900;
   color: var(--color-heading);
   margin-bottom: 0.25rem;
+}
+
+.login__title-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.login__title-link:hover {
+  color: var(--wl-navy);
 }
 
 .login__subtitle {
