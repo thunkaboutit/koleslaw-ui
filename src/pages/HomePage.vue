@@ -21,9 +21,6 @@ const enhanceTextarea = ref<HTMLTextAreaElement | null>(null)
 
 /* ── Submission & animation state ── */
 const isSubmitting = ref(false)
-const isThinking = computed(() => chat.sending && !chat.streamingContent)
-const isStreaming = computed(() => chat.sending && !!chat.streamingContent)
-const isError = computed(() => !!chat.error)
 const responseText = ref('')
 
 const enhancedPrompt = computed(
