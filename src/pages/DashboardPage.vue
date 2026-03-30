@@ -73,7 +73,8 @@ const periods = [
 
 <style scoped>
 .dashboard {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
 }

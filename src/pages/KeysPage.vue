@@ -137,6 +137,7 @@ async function copyKey() {
 
 <style scoped>
 .keys-page {
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;

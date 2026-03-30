@@ -29,7 +29,10 @@ async function signOut() {
           <span class="navbar__brand-text">Koleslaw</span>
         </RouterLink>
         <div class="navbar__links">
-          <RouterLink to="/keys" class="navbar__link">Tools</RouterLink>
+          <template v-if="auth.user">
+            <RouterLink to="/dashboard" class="navbar__link">Dashboard</RouterLink>
+            <RouterLink to="/keys" class="navbar__link">API Keys</RouterLink>
+          </template>
         </div>
       </div>
       <div class="navbar__right">
