@@ -19,19 +19,25 @@ const copied = ref(false)
 const responseRef = ref<HTMLElement | null>(null)
 const enhanceTextarea = ref<HTMLTextAreaElement | null>(null)
 
+/* ── Submission & animation state ── */
+const isSubmitting = ref(false)
+const isThinking = computed(() => chat.sending && !chat.streamingContent)
+const isStreaming = computed(() => chat.sending && !!chat.streamingContent)
+const isError = computed(() => !!chat.error)
+const responseText = ref('')
+
+const enhancedPrompt = computed(
+  () => chat.streamingContent || responseText.value,
+)
+const hasResponse = computed(() => responseText.value.length > 0 && !chat.sending)
+const limitReached = computed(() => promptCount.value >= MAX_PROMPTS)
+
 function autoResize() {
   const el = enhanceTextarea.value
   if (!el) return
   el.style.height = 'auto'
   el.style.height = `${el.scrollHeight}px`
 }
-const lastEnhancedPrompt = ref('')
-
-const enhancedPrompt = computed(
-  () => chat.streamingContent || lastEnhancedPrompt.value,
-)
-const hasResponse = computed(() => lastEnhancedPrompt.value.length > 0 && !chat.sending)
-const limitReached = computed(() => promptCount.value >= MAX_PROMPTS)
 
 /* Auto-scroll as streamed content arrives */
 watch(
@@ -45,16 +51,23 @@ watch(
   },
 )
 
-/* Capture completed response and increment counter */
+/* Capture completed response, increment counter, or reset on error/cancel */
 watch(
   () => chat.sending,
   (sending, wasSending) => {
     if (wasSending && !sending) {
-      const lastAssistant = [...chat.messages].reverse().find((m) => m.role === 'assistant')
-      if (lastAssistant) {
-        lastEnhancedPrompt.value = lastAssistant.content
-        promptCount.value++
-        localStorage.setItem(PROMPT_COUNT_KEY, String(promptCount.value))
+      if (chat.error) {
+        isSubmitting.value = false
+      } else {
+        const last = chat.messages[chat.messages.length - 1]
+        if (last?.role === 'assistant') {
+          responseText.value = last.content
+          promptCount.value++
+          localStorage.setItem(PROMPT_COUNT_KEY, String(promptCount.value))
+        } else {
+          // Cancelled — reset to initial state
+          isSubmitting.value = false
+        }
       }
     }
   },
@@ -67,8 +80,14 @@ async function submitPrompt() {
     showLimitModal.value = true
     return
   }
-  lastEnhancedPrompt.value = ''
+  // Reset all states for new submission
+  responseText.value = ''
   copied.value = false
+  chat.error = null
+  isSubmitting.value = true
+
+  nextTick(() => enhanceTextarea.value?.focus())
+
   await chat.send(text)
 }
 
@@ -119,12 +138,15 @@ function setSectionRef(idx: number) {
 </script>
 
 <template>
-  <div class="home">
+  <div class="home" :class="{ 'home--submitted': isSubmitting }">
     <!-- Hero Section -->
     <section
       :ref="setSectionRef(0)"
       class="hero"
-      :class="{ 'animate-in': revealed.has(0) }"
+      :class="{
+        'animate-in': revealed.has(0),
+        'hero--hidden': isSubmitting,
+      }"
     >
       <div class="hero__inner">
         <div class="hero__mascot-area">
@@ -229,11 +251,14 @@ function setSectionRef(idx: number) {
     <section
       :ref="setSectionRef(1)"
       class="enhance"
-      :class="{ 'animate-in delay-1': revealed.has(1) }"
+      :class="{
+        'animate-in delay-1': revealed.has(1),
+        'enhance--expanded': isSubmitting,
+      }"
     >
       <div class="enhance__container">
         <!-- Usage indicator -->
-        <div class="enhance__usage">
+        <div v-if="!isSubmitting" class="enhance__usage">
           <span class="enhance__usage-text">
             {{ promptCount }} / {{ MAX_PROMPTS }} free prompts used
           </span>
@@ -246,7 +271,10 @@ function setSectionRef(idx: number) {
         </div>
 
         <!-- Input area -->
-        <div class="enhance__input-area">
+        <div
+          class="enhance__input-area"
+          :class="{ 'enhance__input-area--expanded': isSubmitting }"
+        >
           <textarea
             ref="enhanceTextarea"
             v-model="userInput"
@@ -254,6 +282,7 @@ function setSectionRef(idx: number) {
             placeholder="How can I help you today?"
             rows="2"
             :disabled="chat.sending"
+            aria-label="Prompt input"
             @input="autoResize"
             @keydown.enter.exact.prevent="submitPrompt"
           />
@@ -298,22 +327,32 @@ function setSectionRef(idx: number) {
           </div>
         </div>
 
-        <!-- Loading indicator -->
-        <div v-if="chat.sending && !enhancedPrompt" class="enhance__loading">
-          <img :src="mascotSrc" alt="Woof is thinking..." class="enhance__mascot" />
-          <p class="enhance__loading-text">Woof is enhancing your prompt&hellip;</p>
+        <!-- Thinking block (collapsible) -->
+        <div
+          class="thinking-block"
+          :class="{ 'thinking-block--open': chat.sending }"
+          role="status"
+          aria-label="Processing status"
+          aria-live="polite"
+        >
+          <div class="thinking-block__inner">
+            <span class="thinking-block__spinner" aria-hidden="true" />
+            <span class="thinking-block__text">Thinking&hellip;</span>
+          </div>
         </div>
 
         <!-- Error message -->
-        <div v-if="chat.error" class="enhance__error">
+        <div v-if="chat.error" class="enhance__error" role="alert">
           <p>{{ chat.error }}</p>
         </div>
 
-        <!-- Streamed response -->
+        <!-- Streaming / completed response -->
         <div
           v-if="enhancedPrompt"
           ref="responseRef"
           class="enhance__response animate-in"
+          aria-label="Enhanced prompt result"
+          aria-live="polite"
         >
           <div class="enhance__response-header">
             <h3 class="enhance__response-title">Enhanced Prompt</h3>
@@ -327,7 +366,7 @@ function setSectionRef(idx: number) {
             </button>
           </div>
           <div class="enhance__response-body">
-            <p class="enhance__response-text">{{ enhancedPrompt }}</p>
+            <pre class="response-text">{{ enhancedPrompt }}</pre>
             <span v-if="chat.sending" class="enhance__cursor" />
           </div>
         </div>
@@ -375,10 +414,6 @@ function setSectionRef(idx: number) {
 </template>
 
 <style scoped>
-.spacer {
-  flex-grow: 1;
-}
-
 .home {
   width: 100%;
   max-width: 1400px;
@@ -392,6 +427,16 @@ function setSectionRef(idx: number) {
 /* ─── Hero ─── */
 .hero {
   padding: 3rem 0 2rem;
+  max-height: 800px;
+  overflow: hidden;
+  transition: opacity 0.4s ease, max-height 0.5s ease 0.1s, padding 0.5s ease 0.1s;
+}
+
+.hero--hidden {
+  opacity: 0;
+  max-height: 0;
+  padding: 0;
+  pointer-events: none;
 }
 
 .hero__inner {
@@ -561,6 +606,13 @@ function setSectionRef(idx: number) {
 /* ─── Enhance ─── */
 .enhance {
   padding: 2rem 0;
+  transition: flex 0.4s ease;
+}
+
+.enhance--expanded {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .enhance__container {
@@ -568,6 +620,10 @@ function setSectionRef(idx: number) {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.enhance--expanded .enhance__container {
+  flex: 1;
 }
 
 .enhance__usage {
@@ -605,12 +661,16 @@ function setSectionRef(idx: number) {
   border: 1px solid var(--color-border);
   border-radius: 1.25rem;
   padding: 0.875rem 1rem 0.5rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, flex 0.4s ease;
 }
 
 .enhance__input-area:focus-within {
   border-color: var(--wl-navy);
   box-shadow: 0 0 0 3px rgba(26, 39, 68, 0.08);
+}
+
+.enhance__input-area--expanded {
+  flex: none;
 }
 
 .enhance__input {
@@ -702,27 +762,51 @@ function setSectionRef(idx: number) {
   border-color: var(--color-danger);
 }
 
-.enhance__loading {
+/* ─── Thinking Block ─── */
+.thinking-block {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+}
+
+.thinking-block--open {
+  max-height: 80px;
+  opacity: 1;
+}
+
+.thinking-block__inner {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 2rem 0;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-background-soft, var(--color-card));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
 }
 
-.enhance__mascot {
-  width: 80px;
-  height: auto;
-  animation: bob 2s ease-in-out infinite;
+.thinking-block__spinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--wl-navy);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.enhance__loading-text {
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.thinking-block__text {
   font-family: var(--font-body);
   font-style: italic;
   color: var(--wl-warm-gray);
   font-size: 0.9375rem;
 }
 
+/* ─── Error ─── */
 .enhance__error {
   background: var(--color-danger-bg);
   color: var(--color-danger);
@@ -733,6 +817,7 @@ function setSectionRef(idx: number) {
   font-size: 0.875rem;
 }
 
+/* ─── Response ─── */
 .enhance__response {
   background: var(--color-card);
   border: 1px solid var(--color-border);
@@ -783,12 +868,14 @@ function setSectionRef(idx: number) {
   position: relative;
 }
 
-.enhance__response-text {
+.response-text {
   font-family: var(--font-body);
   font-size: 0.9375rem;
   line-height: 1.7;
   color: var(--color-heading);
   white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
 }
 
 .enhance__cursor {
