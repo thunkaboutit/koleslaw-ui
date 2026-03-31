@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { useChatStore } from '@/stores/chat'
+import { useMarkdown } from '@/composables/useMarkdown'
 import BaseModal from '@/components/BaseModal.vue'
 
 const emit = defineEmits<{
@@ -8,6 +9,7 @@ const emit = defineEmits<{
 }>()
 
 const chat = useChatStore()
+const { renderMarkdown } = useMarkdown()
 
 /* ── Prompt usage tracking ── */
 const PROMPT_COUNT_KEY = 'koleslaw-prompt-count'
@@ -18,6 +20,7 @@ const showLimitModal = ref(false)
 /* ── Local UI state ── */
 const userInput = ref('')
 const copied = ref(false)
+const showPreview = ref(false)
 const responseRef = ref<HTMLElement | null>(null)
 const enhanceTextarea = ref<HTMLTextAreaElement | null>(null)
 
@@ -30,6 +33,8 @@ const enhancedPrompt = computed(
 )
 const hasResponse = computed(() => responseText.value.length > 0 && !chat.sending)
 const limitReached = computed(() => promptCount.value >= MAX_PROMPTS)
+const renderedResponse = computed(() => renderMarkdown(enhancedPrompt.value))
+const renderedPreview = computed(() => renderMarkdown(userInput.value))
 
 /* Notify parent when submitting state changes */
 watch(isSubmitting, (val) => emit('update:submitting', val))
@@ -137,7 +142,15 @@ async function copyToClipboard() {
       class="enhance__input-area"
       :class="{ 'enhance__input-area--expanded': isSubmitting }"
     >
+      <!-- Markdown preview (read-only) -->
+      <div
+        v-if="showPreview && userInput"
+        class="enhance__preview markdown-body"
+        v-html="renderedPreview"
+      />
+      <!-- Raw textarea -->
       <textarea
+        v-show="!showPreview"
         ref="enhanceTextarea"
         v-model="userInput"
         class="enhance__input"
@@ -155,6 +168,24 @@ async function copyToClipboard() {
               <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </button>
+          <button
+            class="enhance__tool-btn"
+            :class="{ 'enhance__tool-btn--active': showPreview }"
+            :aria-label="showPreview ? 'Switch to plain text' : 'Switch to markdown preview'"
+            :aria-pressed="showPreview"
+            @click="showPreview = !showPreview"
+          >
+            <svg v-if="!showPreview" width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+            </svg>
+            <svg v-else width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <path d="M3 17L17 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <span class="enhance__view-label">{{ showPreview ? 'Markdown' : 'Plain text' }}</span>
         </div>
         <div class="enhance__toolbar-right">
           <button class="enhance__tool-btn" aria-label="Voice input">
@@ -228,7 +259,7 @@ async function copyToClipboard() {
         </button>
       </div>
       <div class="enhance__response-body">
-        <pre class="response-text">{{ enhancedPrompt }}</pre>
+        <div class="response-text markdown-body" v-html="renderedResponse" />
         <span v-if="chat.sending" class="enhance__cursor" />
       </div>
     </div>
@@ -504,14 +535,120 @@ async function copyToClipboard() {
   position: relative;
 }
 
-.response-text {
+/* ─── Markdown body (v-html) ─── */
+.markdown-body {
   font-family: var(--font-body);
   font-size: 0.9375rem;
   line-height: 1.7;
   color: var(--color-heading);
-  white-space: pre-wrap;
   word-wrap: break-word;
-  margin: 0;
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3),
+.markdown-body :deep(h4) {
+  font-family: var(--font-heading);
+  margin: 1em 0 0.5em;
+  line-height: 1.3;
+}
+
+.markdown-body :deep(h1) { font-size: 1.5rem; }
+.markdown-body :deep(h2) { font-size: 1.25rem; }
+.markdown-body :deep(h3) { font-size: 1.1rem; }
+
+.markdown-body :deep(p) {
+  margin: 0.5em 0;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.markdown-body :deep(li + li) {
+  margin-top: 0.25em;
+}
+
+.markdown-body :deep(blockquote) {
+  border-left: 3px solid var(--wl-gold);
+  margin: 0.75em 0;
+  padding: 0.25em 1em;
+  color: var(--wl-warm-gray);
+}
+
+.markdown-body :deep(a) {
+  color: var(--wl-navy);
+  text-decoration: underline;
+}
+
+.markdown-body :deep(code) {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: rgba(26, 39, 68, 0.06);
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+}
+
+.markdown-body :deep(pre.hljs) {
+  background: rgba(26, 39, 68, 0.04);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.75em 0;
+}
+
+.markdown-body :deep(pre.hljs code) {
+  background: none;
+  padding: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.markdown-body :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1em 0;
+}
+
+.markdown-body :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75em 0;
+}
+
+.markdown-body :deep(th),
+.markdown-body :deep(td) {
+  border: 1px solid var(--color-border);
+  padding: 0.4em 0.75em;
+  text-align: left;
+}
+
+.markdown-body :deep(th) {
+  background: rgba(26, 39, 68, 0.04);
+  font-weight: 700;
+}
+
+/* ─── Input preview ─── */
+.enhance__preview {
+  min-height: 2.5em;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.enhance__tool-btn--active {
+  color: var(--wl-navy);
+  background: rgba(26, 39, 68, 0.08);
+}
+
+.enhance__view-label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--wl-warm-gray);
+  user-select: none;
 }
 
 .enhance__cursor {
