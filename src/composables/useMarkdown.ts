@@ -2,10 +2,12 @@ import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
 
-const md = new MarkdownIt({
+const { escapeHtml } = MarkdownIt().utils
+
+const md: MarkdownIt = new MarkdownIt({
   linkify: true,
   typographer: true,
-  highlight(str, lang) {
+  highlight(str: string, lang: string): string {
     if (lang && hljs.getLanguage(lang)) {
       try {
         return `<pre class="hljs"><code class="language-${lang}">${hljs.highlight(str, { language: lang }).value}</code></pre>`
@@ -13,7 +15,7 @@ const md = new MarkdownIt({
         /* fallback below */
       }
     }
-    return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
+    return `<pre class="hljs"><code>${escapeHtml(str)}</code></pre>`
   },
 })
 
