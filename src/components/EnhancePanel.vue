@@ -154,7 +154,7 @@ async function copyToClipboard() {
         ref="enhanceTextarea"
         v-model="userInput"
         class="enhance__input"
-        placeholder="How can I help you today?"
+        placeholder="Drop your prompt here — let Koleslaw do the rest."
         rows="2"
         :disabled="chat.sending"
         aria-label="Prompt input"
