@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import { useMarkdown } from '@/composables/useMarkdown'
 import BaseModal from '@/components/BaseModal.vue'
@@ -120,6 +120,64 @@ async function copyToClipboard() {
     setTimeout(() => (copied.value = false), 2000)
   }
 }
+
+/* ── Voice input ── */
+const SpeechRecognitionCtor = window.SpeechRecognition ?? window.webkitSpeechRecognition
+
+const isRecording = ref(false)
+const speechSupported = !!SpeechRecognitionCtor
+let recognition: SpeechRecognition | null = null
+
+function toggleRecording() {
+  if (isRecording.value) {
+    recognition?.stop()
+    return
+  }
+
+  if (!SpeechRecognitionCtor) {
+    chat.error = 'Speech recognition is not supported in this browser.'
+    return
+  }
+
+  const rec = new SpeechRecognitionCtor()
+  rec.continuous = true
+  rec.interimResults = false
+  rec.lang = navigator.language || 'en-US'
+
+  rec.onresult = (event: SpeechRecognitionEvent) => {
+    const last = event.results[event.results.length - 1]
+    if (last?.isFinal) {
+      const transcript = last[0]?.transcript.trim()
+      if (transcript) {
+        userInput.value += (userInput.value && !userInput.value.endsWith(' ') ? ' ' : '') + transcript
+        autoResize()
+      }
+    }
+  }
+
+  rec.onend = () => {
+    isRecording.value = false
+    recognition = null
+  }
+
+  rec.onerror = (event: SpeechRecognitionErrorEvent) => {
+    isRecording.value = false
+    recognition = null
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      chat.error = 'Microphone access was denied. Please allow microphone access in your browser settings.'
+    } else if (event.error !== 'aborted') {
+      chat.error = `Speech recognition error: ${event.error}`
+    }
+  }
+
+  recognition = rec
+  rec.start()
+  isRecording.value = true
+}
+
+onUnmounted(() => {
+  recognition?.stop()
+})
 </script>
 
 <template>
@@ -188,8 +246,17 @@ async function copyToClipboard() {
           <span class="enhance__view-label">{{ showPreview ? 'Markdown' : 'Plain text' }}</span>
         </div>
         <div class="enhance__toolbar-right">
-          <button class="enhance__tool-btn" aria-label="Voice input">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <button
+            v-if="speechSupported"
+            class="enhance__tool-btn"
+            :class="{ 'enhance__tool-btn--recording': isRecording }"
+            :aria-label="isRecording ? 'Stop recording' : 'Voice input'"
+            :aria-pressed="isRecording"
+            :disabled="chat.sending"
+            @click="toggleRecording"
+          >
+            <span v-if="isRecording" class="enhance__rec-dot" aria-hidden="true" />
+            <svg v-else width="20" height="20" viewBox="0 0 20 20" fill="none">
               <rect x="7" y="2" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
               <path d="M4 10a6 6 0 0012 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
               <path d="M10 16v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -642,6 +709,25 @@ async function copyToClipboard() {
 .enhance__tool-btn--active {
   color: var(--wl-navy);
   background: rgba(26, 39, 68, 0.08);
+}
+
+.enhance__tool-btn--recording {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+}
+
+.enhance__rec-dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  animation: pulse-rec 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-rec {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
 }
 
 .enhance__view-label {
