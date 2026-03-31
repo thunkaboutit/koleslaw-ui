@@ -26,7 +26,7 @@ async function signOut() {
     <div class="navbar__inner">
       <div class="navbar__left">
         <RouterLink to="/" class="navbar__brand">
-          <span class="navbar__brand-text">Koleslaw</span>
+          <span class="navbar__brand-text">koleslaw.ai</span>
         </RouterLink>
         <div class="navbar__links">
           <template v-if="auth.user">
@@ -89,8 +89,8 @@ async function signOut() {
 
 .navbar__brand-text {
   font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 1.25rem;
+  font-weight: 600;
+  font-size: 1.5rem;
   color: var(--color-heading);
 }
 

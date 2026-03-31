@@ -81,7 +81,7 @@ function setSectionRef(idx: number) {
         <div class="hero__content">
           <h1 class="hero__title">
             Stop Re-prompting.<br />
-            Start Kole-Woofing.
+            Start Kolewoofing.
           </h1>
           <p class="hero__subtitle">
             Koleslaw takes your rough prompt and turns it into exactly what AI
@@ -288,8 +288,8 @@ function setSectionRef(idx: number) {
 
 .hero__title {
   font-size: 2.75rem;
-  font-weight: 900;
-  line-height: 1.15;
+  font-weight: 500;
+  line-height: 1.25;
   margin-bottom: 1.25rem;
   color: var(--wl-black);
 }

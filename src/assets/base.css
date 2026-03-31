@@ -1,4 +1,4 @@
-/* Koleslaw Design System — vintage-print meets developer docs */
+/* Koleslaw Design System — playful meets developer docs */
 :root {
   /* Brand palette */
   --wl-cream: #f5f0e8;
@@ -43,8 +43,8 @@
   --radius-lg: 10px;
 
   /* Typography */
-  --font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --font-body: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-heading: 'Fredoka', 'Nunito', sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', Menlo, Consolas, monospace;
 
   --section-gap: 4rem;
