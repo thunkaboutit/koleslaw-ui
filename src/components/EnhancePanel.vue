@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onUnmounted, onBeforeUnmount } from 'vue'
 import { useChatStore } from '@/stores/chat'
 import { useMarkdown } from '@/composables/useMarkdown'
 import BaseModal from '@/components/BaseModal.vue'
@@ -24,12 +24,76 @@ const showPreview = ref(false)
 const responseRef = ref<HTMLElement | null>(null)
 const enhanceTextarea = ref<HTMLTextAreaElement | null>(null)
 
+/* ── File attachments ── */
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const attachedFiles = ref<File[]>([])
+const filePreviews = ref<string[]>([])
+// Block compressed/archive files only — everything else is accepted
+const BLOCKED_EXTENSIONS = new Set([
+  '.zip', '.gz', '.tar', '.tgz', '.bz2', '.xz', '.7z',
+  '.rar', '.zst', '.lz', '.lz4', '.cab', '.iso', '.dmg',
+  '.jar', '.war', '.ear',
+])
+
+function openFilePicker() {
+  fileInputRef.value?.click()
+}
+
+function handleFileSelect(event: Event) {
+  const input = event.target as HTMLInputElement
+  if (!input.files) return
+  for (const file of Array.from(input.files)) {
+    if (attachedFiles.value.length >= 5) break
+    const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+    if (BLOCKED_EXTENSIONS.has(ext)) {
+      chat.error = `Compressed/archive files (${ext}) are not supported.`
+      continue
+    }
+    attachedFiles.value.push(file)
+    if (file.type.startsWith('image/')) {
+      filePreviews.value.push(URL.createObjectURL(file))
+    } else {
+      filePreviews.value.push('')
+    }
+  }
+  input.value = ''
+}
+
+function removeFile(index: number) {
+  const preview = filePreviews.value[index]
+  if (preview) URL.revokeObjectURL(preview)
+  attachedFiles.value.splice(index, 1)
+  filePreviews.value.splice(index, 1)
+}
+
+function clearFiles() {
+  filePreviews.value.forEach((url) => { if (url) URL.revokeObjectURL(url) })
+  attachedFiles.value = []
+  filePreviews.value = []
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+onBeforeUnmount(() => clearFiles())
+
 /* ── Submission & animation state ── */
 const isSubmitting = ref(false)
 const responseText = ref('')
 
+/* Strip boilerplate the model sometimes wraps around its output */
+function cleanResponse(raw: string): string {
+  return raw
+    .replace(/^---\n?/gm, '')
+    .replace(/^\s*enhanced\s+prompt\s*:?\s*\n*/i, '')
+    .trim()
+}
+
 const enhancedPrompt = computed(
-  () => chat.streamingContent || responseText.value,
+  () => cleanResponse(chat.streamingContent || responseText.value),
 )
 const hasResponse = computed(() => responseText.value.length > 0 && !chat.sending)
 const limitReached = computed(() => promptCount.value >= MAX_PROMPTS)
@@ -93,6 +157,9 @@ async function submitPrompt() {
     showLimitModal.value = true
     return
   }
+  // Snapshot files for this request — chips stay visible until submit completes
+  const files = attachedFiles.value.length ? [...attachedFiles.value] : undefined
+
   responseText.value = ''
   copied.value = false
   chat.error = null
@@ -100,7 +167,7 @@ async function submitPrompt() {
 
   nextTick(() => enhanceTextarea.value?.focus())
 
-  await chat.send(prefixPrompt(text))
+  await chat.send(prefixPrompt(text), files)
 }
 
 async function copyToClipboard() {
@@ -195,6 +262,15 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Hidden file input -->
+    <input
+      ref="fileInputRef"
+      type="file"
+      multiple
+      class="enhance__file-input"
+      @change="handleFileSelect"
+    />
+
     <!-- Input area -->
     <div
       class="enhance__input-area"
@@ -219,9 +295,47 @@ onUnmounted(() => {
         @input="autoResize"
         @keydown.enter.exact.prevent="submitPrompt"
       />
+
+      <!-- Attached file previews -->
+      <div v-if="attachedFiles.length" class="enhance__files">
+        <div
+          v-for="(file, i) in attachedFiles"
+          :key="i"
+          class="enhance__file-chip"
+        >
+          <img
+            v-if="filePreviews[i]"
+            :src="filePreviews[i]"
+            :alt="file.name"
+            class="enhance__file-thumb"
+          />
+          <span v-else class="enhance__file-icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 1h5l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2" fill="none"/>
+              <path d="M9 1v4h4" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </span>
+          <span class="enhance__file-name">{{ file.name }}</span>
+          <span class="enhance__file-size">{{ formatFileSize(file.size) }}</span>
+          <button
+            class="enhance__file-remove"
+            aria-label="Remove file"
+            @click="removeFile(i)"
+          >
+            &times;
+          </button>
+        </div>
+      </div>
+
       <div class="enhance__toolbar">
         <div class="enhance__toolbar-left">
-          <button class="enhance__tool-btn" aria-label="Attach file">
+          <button
+            class="enhance__tool-btn"
+            :class="{ 'enhance__tool-btn--active': attachedFiles.length > 0 }"
+            :disabled="chat.sending || attachedFiles.length >= 5"
+            aria-label="Attach file"
+            @click="openFilePicker"
+          >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
@@ -494,6 +608,80 @@ onUnmounted(() => {
 .enhance__send--cancel:hover {
   color: var(--color-danger);
   border-color: var(--color-danger);
+}
+
+/* ─── File attachments ─── */
+.enhance__file-input {
+  display: none;
+}
+
+.enhance__files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.enhance__file-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(26, 39, 68, 0.05);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  max-width: 200px;
+}
+
+.enhance__file-thumb {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.enhance__file-icon {
+  flex-shrink: 0;
+  color: var(--wl-warm-gray);
+}
+
+.enhance__file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-heading);
+  font-family: var(--font-body);
+}
+
+.enhance__file-size {
+  color: var(--wl-warm-gray);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+}
+
+.enhance__file-remove {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: none;
+  color: var(--wl-warm-gray);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s;
+}
+
+.enhance__file-remove:hover {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 /* ─── Thinking Block ─── */

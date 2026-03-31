@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { ChatMessage } from '@/api/types'
-import { sendChatStream } from '@/api/chat'
+import { sendChatStream, sendChatStreamWithFiles } from '@/api/chat'
 
 const STORAGE_KEY = 'koleslaw-chat-history'
 const MAX_MESSAGES = 100
@@ -33,7 +33,7 @@ export const useChatStore = defineStore('chat', () => {
 
   const hasMessages = computed(() => messages.value.length > 0)
 
-  async function send(content: string) {
+  async function send(content: string, files?: File[]) {
     if (!content.trim() || sending.value) return
 
     error.value = null
@@ -45,14 +45,16 @@ export const useChatStore = defineStore('chat', () => {
     streamingContent.value = ''
     abortController = new AbortController()
 
+    const onChunk = (chunk: { delta: string }) => {
+      streamingContent.value += chunk.delta
+    }
+
     try {
-      await sendChatStream(
-        messages.value,
-        (chunk) => {
-          streamingContent.value += chunk.delta
-        },
-        abortController.signal,
-      )
+      if (files?.length) {
+        await sendChatStreamWithFiles(messages.value, files, onChunk, abortController.signal)
+      } else {
+        await sendChatStream(messages.value, onChunk, abortController.signal)
+      }
 
       if (streamingContent.value) {
         const assistantMessage: ChatMessage = {
