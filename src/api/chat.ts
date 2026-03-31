@@ -11,7 +11,7 @@ export async function sendChatStream(
   const response = await fetch(`${API_BASE}/v1/chat`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', 'X-API-Key': PUBLIC_API_KEY },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PUBLIC_API_KEY}` },
     body: JSON.stringify({ messages }),
     signal,
   })

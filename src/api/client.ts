@@ -16,7 +16,7 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-API-Key': PUBLIC_API_KEY,
+      Authorization: `Bearer ${PUBLIC_API_KEY}`,
       ...options.headers,
     },
     ...options,
