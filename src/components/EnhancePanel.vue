@@ -13,7 +13,7 @@ const { renderMarkdown } = useMarkdown()
 
 /* ── Prompt usage tracking ── */
 const PROMPT_COUNT_KEY = 'koleslaw-prompt-count'
-const MAX_PROMPTS = 3
+const MAX_PROMPTS = 10
 const promptCount = ref(parseInt(localStorage.getItem(PROMPT_COUNT_KEY) ?? '0', 10))
 const showLimitModal = ref(false)
 
