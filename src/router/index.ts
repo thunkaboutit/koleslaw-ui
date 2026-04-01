@@ -23,6 +23,18 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/terms',
+      name: 'terms',
+      component: () => import('@/pages/TermsOfServicePage.vue'),
+      meta: { public: true },
+    },
+    {
+      path: '/privacy',
+      name: 'privacy',
+      component: () => import('@/pages/PrivacyPolicyPage.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/pages/DashboardPage.vue'),

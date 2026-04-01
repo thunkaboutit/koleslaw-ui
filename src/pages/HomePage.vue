@@ -164,8 +164,8 @@ function setSectionRef(idx: number) {
     >
       <div class="footer__inner">
         <div class="footer__links">
-          <a href="#terms" class="footer__link">Terms of Service</a>
-          <a href="#privacy" class="footer__link">Privacy Policy</a>
+          <RouterLink to="/terms" class="footer__link">Terms of Service</RouterLink>
+          <RouterLink to="/privacy" class="footer__link">Privacy Policy</RouterLink>
           <a href="#contact" class="footer__link">Contact Us</a>
         </div>
         <div class="footer__right">
