@@ -35,6 +35,12 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/contact',
+      name: 'contact',
+      component: () => import('@/pages/ContactPage.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/pages/DashboardPage.vue'),

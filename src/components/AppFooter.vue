@@ -19,7 +19,7 @@ withDefaults(
       <div class="footer__links">
         <RouterLink to="/terms" class="footer__link">Terms of Service</RouterLink>
         <RouterLink to="/privacy" class="footer__link">Privacy Policy</RouterLink>
-        <a href="#contact" class="footer__link">Contact Us</a>
+        <RouterLink to="/contact" class="footer__link">Contact Us</RouterLink>
       </div>
       <div class="footer__right">
         <span class="footer__copy">
