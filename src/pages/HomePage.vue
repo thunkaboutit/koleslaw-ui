@@ -156,24 +156,6 @@ function setSectionRef(idx: number) {
       <EnhancePanel @update:submitting="isSubmitting = $event" />
     </section>
 
-    <!-- Footer -->
-    <footer
-      :ref="setSectionRef(2)"
-      class="footer"
-      :class="{ 'animate-in delay-2': revealed.has(2) }"
-    >
-      <div class="footer__inner">
-        <div class="footer__links">
-          <RouterLink to="/terms" class="footer__link">Terms of Service</RouterLink>
-          <RouterLink to="/privacy" class="footer__link">Privacy Policy</RouterLink>
-          <a href="#contact" class="footer__link">Contact Us</a>
-        </div>
-        <div class="footer__right">
-          <span class="footer__copy">Copyright &copy; 2025-2026. All Koleslaw</span>
-          <img :src="logoSrc" alt="Koleslaw logo" class="footer__logo" />
-        </div>
-      </div>
-    </footer>
   </div>
 </template>
 
@@ -379,53 +361,6 @@ function setSectionRef(idx: number) {
   flex-direction: column;
 }
 
-/* ─── Footer ─── */
-.footer {
-  margin-top: auto;
-  padding: 1.5rem 0 2rem;
-  border-top: 1px solid var(--color-border-hover);
-}
-
-.footer__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.footer__links {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.footer__link {
-  color: var(--color-text);
-  text-decoration: none;
-  font-size: 0.875rem;
-  transition: color 0.2s;
-}
-
-.footer__link:hover {
-  color: var(--color-heading);
-}
-
-.footer__right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.footer__copy {
-  font-size: 0.875rem;
-  color: var(--wl-warm-gray);
-}
-
-.footer__logo {
-  height: 36px;
-  width: auto;
-}
-
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .home {
@@ -459,18 +394,6 @@ function setSectionRef(idx: number) {
     font-size: 2rem;
   }
 
-  .footer__inner {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .footer__links {
-    justify-content: center;
-  }
-
-  .footer__right {
-    justify-content: center;
-  }
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {
