@@ -103,6 +103,11 @@ function loginWithGitHub() {
         </svg>
         Sign in with GitHub
       </button>
+
+      <p class="login__signup">
+        Don't have an account?
+        <RouterLink to="/signup" class="login__signup-link">Sign up</RouterLink>
+      </p>
     </div>
   </div>
 </template>
@@ -311,6 +316,24 @@ function loginWithGitHub() {
 
 .login__icon {
   flex-shrink: 0;
+}
+
+/* ─── Bottom link ─── */
+.login__signup {
+  margin-top: 1.5rem;
+  font-size: 0.8125rem;
+  color: var(--color-text);
+  opacity: 0.7;
+}
+
+.login__signup-link {
+  color: var(--wl-navy);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login__signup-link:hover {
+  text-decoration: underline;
 }
 
 /* ─── Mobile adjustments ─── */

@@ -11,9 +11,9 @@ const route = useRoute()
 <template>
   <BorderFrame>
 <!--    <main>-->
-      <AppNavbar v-if="route.name !== 'login'" />
+      <AppNavbar v-if="route.name !== 'login' && route.name !== 'signup'" />
       <RouterView />
-      <AppFooter v-if="route.name !== 'login'" />
+      <AppFooter v-if="route.name !== 'login' && route.name !== 'signup'" />
 <!--    </main>-->
   </BorderFrame>
   <!-- <ChatPanel v-if="route.name !== 'login'" /> -->
