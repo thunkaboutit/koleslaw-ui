@@ -40,7 +40,10 @@ async function signOut() {
           <span class="navbar__user">{{ auth.user.name }}</span>
           <button class="navbar__signout" @click="signOut">Sign out</button>
         </template>
-        <RouterLink v-else to="/login" class="navbar__login-btn">Login</RouterLink>
+        <template v-else>
+          <RouterLink to="/signup" class="navbar__signup-link">Sign up</RouterLink>
+          <RouterLink to="/login" class="navbar__login-btn">Login</RouterLink>
+        </template>
       </div>
     </div>
   </nav>
@@ -140,6 +143,19 @@ async function signOut() {
 .navbar__signout:hover {
   color: var(--color-danger);
   border-color: var(--color-danger);
+}
+
+.navbar__signup-link {
+  color: var(--color-text);
+  text-decoration: none;
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.navbar__signup-link:hover {
+  color: var(--color-heading);
 }
 
 .navbar__login-btn {
