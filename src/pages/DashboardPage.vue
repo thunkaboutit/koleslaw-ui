@@ -20,6 +20,17 @@ function formatNumber(n: number): string {
   return n.toString()
 }
 
+const INPUT_COST_PER_TOKEN = 0.5 / 1_000_000
+const OUTPUT_COST_PER_TOKEN = 2.0 / 1_000_000
+
+const estimatedCost = computed(() => {
+  if (!usage.data) return '$0.00'
+  const cost =
+    usage.data.summary.total_input_tokens * INPUT_COST_PER_TOKEN +
+    usage.data.summary.total_output_tokens * OUTPUT_COST_PER_TOKEN
+  return `$${cost.toFixed(2)}`
+})
+
 const periods = [
   { label: '7d', days: 7 },
   { label: '30d', days: 30 },
@@ -61,6 +72,9 @@ const periods = [
         </BaseCard>
         <BaseCard title="Cache Hit Rate">
           <p class="stat-value">{{ cacheRate }}</p>
+        </BaseCard>
+        <BaseCard title="Est. Cost">
+          <p class="stat-value">{{ estimatedCost }}</p>
         </BaseCard>
       </div>
 

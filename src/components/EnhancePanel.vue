@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onUnmounted, onBeforeUnmount } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { useMarkdown } from '@/composables/useMarkdown'
 import BaseModal from '@/components/BaseModal.vue'
@@ -8,6 +9,7 @@ const emit = defineEmits<{
   'update:submitting': [value: boolean]
 }>()
 
+const auth = useAuthStore()
 const chat = useChatStore()
 const { renderMarkdown } = useMarkdown()
 
@@ -96,7 +98,7 @@ const enhancedPrompt = computed(
   () => cleanResponse(chat.streamingContent || responseText.value),
 )
 const hasResponse = computed(() => responseText.value.length > 0 && !chat.sending)
-const limitReached = computed(() => promptCount.value >= MAX_PROMPTS)
+const limitReached = computed(() => !auth.user && promptCount.value >= MAX_PROMPTS)
 const renderedResponse = computed(() => renderMarkdown(enhancedPrompt.value))
 const renderedPreview = computed(() => renderMarkdown(userInput.value))
 
@@ -133,8 +135,10 @@ watch(
         const last = chat.messages[chat.messages.length - 1]
         if (last?.role === 'assistant') {
           responseText.value = last.content
-          promptCount.value++
-          localStorage.setItem(PROMPT_COUNT_KEY, String(promptCount.value))
+          if (!auth.user) {
+            promptCount.value++
+            localStorage.setItem(PROMPT_COUNT_KEY, String(promptCount.value))
+          }
         } else {
           isSubmitting.value = false
         }
@@ -249,8 +253,8 @@ onUnmounted(() => {
 
 <template>
   <div class="enhance__container">
-    <!-- Usage indicator -->
-    <div v-if="!isSubmitting" class="enhance__usage">
+    <!-- Usage indicator (anonymous users only) -->
+    <div v-if="!isSubmitting && !auth.user" class="enhance__usage">
       <span class="enhance__usage-text">
         {{ promptCount }} / {{ MAX_PROMPTS }} free prompts used
       </span>
