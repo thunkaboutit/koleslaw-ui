@@ -1,12 +1,12 @@
 # Koleslaw — Terms of Service
 
-**Effective date:** [Date]
+**Effective date:** 4/2/2026 
 **Last updated:** March 31, 2026
 
 These Terms of Service ("Terms") govern your access to and use of the Koleslaw prompt enhancement service, including the
 website and chat interface at [https://koleslaw.ai](https://koleslaw.ai) (the "Site"), the Koleslaw Chrome extension 
 (the "Extension"), the Koleslaw API at `api.koleslaw.ai` (the "API"), and any related tools, documentation, or
-interfaces (collectively, the "Service"). The Service is operated by **[Your Legal Entity Name]** ("Koleslaw," "we," "
+interfaces (collectively, the "Service"). The Service is operated by **Thunk About It** ("Koleslaw," "we," "
 us," or "our").
 
 The Site's chat box and the Extension both communicate with the same backend API. These Terms apply equally to all
@@ -328,8 +328,8 @@ support@koleslaw.ai. We will attempt to resolve the dispute within 30 days of re
 ### 15.2 Binding Arbitration
 
 If the dispute is not resolved informally, you and Koleslaw agree to resolve it through binding arbitration administered
-by [arbitration body, e.g., the American Arbitration Association (AAA)] under its then-current rules, conducted
-in [City, State]. The arbitrator's decision shall be final and binding and may be entered as a judgment in any court of
+by the American Arbitration Association (AAA) under its then-current rules, conducted
+in Atlanta, GA. The arbitrator's decision shall be final and binding and may be entered as a judgment in any court of
 competent jurisdiction.
 
 ### 15.3 Class Action Waiver
@@ -387,10 +387,10 @@ government, internet outages, or third-party service failures.
 Notices to you may be sent to the email address associated with your account or displayed on the Site. Notices to us
 should be sent to:
 
-**[Your Legal Entity Name]**
-[Street Address]
-[City, State, ZIP]
-[Country]
+**Thunk About It**
+P.O. Box 1234
+Alpharetta, GA 30009
+United States of America
 Email: legal@koleslaw.ai
 
 ---
@@ -410,6 +410,5 @@ Terms constitutes your acceptance of the changes.
 If you have questions about these Terms, contact us at:
 
 **Email:** legal@koleslaw.ai
-**Mail:** [Your Legal Entity Name], [Street Address], [City, State, ZIP], [Country]
 
 ---
