@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { ApiError } from '@/api/client'
+import { api, ApiError } from '@/api/client'
 import BaseButton from '@/components/BaseButton.vue'
 import mascotSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
 
@@ -14,6 +14,15 @@ const password = ref('')
 const error = ref('')
 const submitting = ref(false)
 const socialLoading = ref<string | null>(null)
+const enabledProviders = ref<string[]>([])
+
+onMounted(async () => {
+  try {
+    enabledProviders.value = await api<string[]>('/auth/providers')
+  } catch {
+    enabledProviders.value = []
+  }
+})
 
 async function handleLogin() {
   if (!username.value || !password.value) return
@@ -38,12 +47,14 @@ function loginWith(provider: string) {
   window.location.href = `/auth/${provider}`
 }
 
-const providers = [
+const allProviders = [
   { id: 'google', label: 'Sign in with Google', icon: 'google' },
   { id: 'github', label: 'Sign in with GitHub', icon: 'github' },
   { id: 'facebook', label: 'Sign in with Facebook', icon: 'facebook' },
   { id: 'instagram', label: 'Sign in with Instagram', icon: 'instagram' },
 ]
+
+const providers = computed(() => allProviders.filter((p) => enabledProviders.value.includes(p.id)))
 </script>
 
 <template>
@@ -100,6 +111,7 @@ const providers = [
         </BaseButton>
       </form>
 
+      <template v-if="providers.length">
       <div class="login__divider">
         <span>or</span>
       </div>
@@ -187,6 +199,7 @@ const providers = [
           {{ socialLoading === provider.id ? 'Redirecting...' : provider.label }}
         </button>
       </div>
+      </template>
 
       <p class="login__signup">
         Don't have an account?

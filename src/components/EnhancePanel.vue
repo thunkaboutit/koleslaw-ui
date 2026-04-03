@@ -456,7 +456,7 @@ onUnmounted(() => {
       Sign up for an account to continue enhancing your prompts with Woof.
     </p>
     <template #footer>
-      <RouterLink to="/login" class="enhance__btn enhance__btn--submit">
+      <RouterLink to="/signup" class="enhance__btn enhance__btn--submit">
         Sign Up
       </RouterLink>
       <button class="enhance__btn enhance__btn--cancel" @click="showLimitModal = false">

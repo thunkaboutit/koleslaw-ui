@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { api } from '@/api/client'
 import mascotSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
 
 const auth = useAuthStore()
@@ -10,12 +11,19 @@ const route = useRoute()
 
 const loading = ref<string | null>(null)
 const error = ref('')
+const enabledProviders = ref<string[]>([])
 
 onMounted(async () => {
   await auth.fetchUser()
   if (auth.user) {
     router.replace('/dashboard')
     return
+  }
+
+  try {
+    enabledProviders.value = await api<string[]>('/auth/providers')
+  } catch {
+    enabledProviders.value = []
   }
 
   // Check for error passed back from OAuth callback
@@ -31,28 +39,14 @@ function signupWith(provider: string) {
   window.location.href = `/auth/${provider}?signup=1`
 }
 
-const providers = [
-  {
-    id: 'google',
-    label: 'Sign up with Google',
-    icon: 'google',
-  },
-  {
-    id: 'github',
-    label: 'Sign up with GitHub',
-    icon: 'github',
-  },
-  {
-    id: 'facebook',
-    label: 'Sign up with Facebook',
-    icon: 'facebook',
-  },
-  {
-    id: 'instagram',
-    label: 'Sign up with Instagram',
-    icon: 'instagram',
-  },
+const allProviders = [
+  { id: 'google', label: 'Sign up with Google', icon: 'google' },
+  { id: 'github', label: 'Sign up with GitHub', icon: 'github' },
+  { id: 'facebook', label: 'Sign up with Facebook', icon: 'facebook' },
+  { id: 'instagram', label: 'Sign up with Instagram', icon: 'instagram' },
 ]
+
+const providers = computed(() => allProviders.filter((p) => enabledProviders.value.includes(p.id)))
 </script>
 
 <template>
