@@ -19,6 +19,31 @@ const MAX_PROMPTS = 10
 const promptCount = ref(parseInt(localStorage.getItem(PROMPT_COUNT_KEY) ?? '0', 10))
 const showLimitModal = ref(false)
 
+/* ── Placeholder rotation ── */
+const PLACEHOLDERS = [
+  'Type something ruff and let Woof polish it.',
+  'Paste your prompt here. Woof won\'t judge… much.',
+  'Go ahead, throw Woof a bone. Any prompt will do.',
+  'Your prompt called. It wants to be better.',
+  'Drop it like it\'s prompt.',
+  'Woof accepts belly rubs and bad prompts.',
+  'Don\'t worry, even "make it good" is a starting point.',
+  'This cow barks. Your prompt doesn\'t have to.',
+  'Moo? No. Woof? Yes. Prompt? Paste it.',
+  'Enter your prompt — Woof will herd it into shape.',
+  'You write the draft, Woof writes the craft.',
+  'Prompts in, woofed-up results out. Simple as that.',
+  'Got a prompt that needs CPR? Woof is on it.',
+  'Feed Woof your prompt. Watch it come back golden.',
+  'Warning: prompts may come back dramatically better.',
+  'One small paste for you, one giant woof for promptkind.',
+  'Woof doesn\'t fetch — Woof enhances.',
+  'Your future self will thank you for pasting that prompt.',
+  'Half-baked prompt? Woof has the oven ready.',
+  'Toss your spaghetti prompt in here. Woof sorts the noodles.',
+]
+const placeholder = PLACEHOLDERS[Math.floor(Math.random() * PLACEHOLDERS.length)]
+
 /* ── Local UI state ── */
 const userInput = ref('')
 const copied = ref(false)
@@ -292,7 +317,7 @@ onUnmounted(() => {
         ref="enhanceTextarea"
         v-model="userInput"
         class="enhance__input"
-        placeholder="Drop your prompt here — let Koleslaw do the rest."
+        :placeholder="placeholder"
         rows="2"
         :disabled="chat.sending"
         aria-label="Prompt input"

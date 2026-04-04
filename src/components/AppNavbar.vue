@@ -30,6 +30,7 @@ async function signOut() {
         </RouterLink>
         <div class="navbar__links">
           <template v-if="auth.user">
+            <RouterLink to="/chat" class="navbar__link">New Chat</RouterLink>
             <RouterLink to="/dashboard" class="navbar__link">Dashboard</RouterLink>
             <RouterLink to="/keys" class="navbar__link">API Keys</RouterLink>
           </template>

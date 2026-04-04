@@ -26,7 +26,6 @@ const router = createRouter({
       path: '/chat',
       name: 'chat',
       component: () => import('@/pages/ChatPage.vue'),
-      meta: { public: true },
     },
     {
       path: '/terms',
