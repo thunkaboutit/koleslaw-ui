@@ -38,7 +38,7 @@ async function signOut() {
       </div>
       <div class="navbar__right">
         <template v-if="auth.user">
-          <span class="navbar__user">{{ auth.user.name }}</span>
+          <RouterLink to="/profile" class="navbar__user-link">{{ auth.user.name }}</RouterLink>
           <button class="navbar__signout" @click="signOut">Sign out</button>
         </template>
         <template v-else>
@@ -124,9 +124,15 @@ async function signOut() {
   gap: 1rem;
 }
 
-.navbar__user {
+.navbar__user-link {
   font-size: 0.875rem;
   color: var(--color-text);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.navbar__user-link:hover {
+  color: var(--color-heading);
 }
 
 .navbar__signout {

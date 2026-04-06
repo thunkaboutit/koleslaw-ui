@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { api, ApiError } from '@/api/client'
-import type { UserInfo } from '@/api/types'
+import type { UserInfo, DataExportResponse } from '@/api/types'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<UserInfo | null>(null)
@@ -22,12 +22,23 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function login(username: string, password: string) {
-    await api('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password }),
+  async function updateProfile(name: string) {
+    user.value = await api<UserInfo>('/v1/account/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ name }),
     })
-    await fetchUser()
+  }
+
+  async function exportData() {
+    return await api<DataExportResponse>('/v1/account/export')
+  }
+
+  async function deleteAccount(confirmation: string) {
+    await api('/v1/account', {
+      method: 'DELETE',
+      body: JSON.stringify({ confirmation }),
+    })
+    user.value = null
   }
 
   async function logout() {
@@ -35,5 +46,5 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
-  return { user, loading, fetchUser, login, logout }
+  return { user, loading, fetchUser, logout, updateProfile, exportData, deleteAccount }
 })

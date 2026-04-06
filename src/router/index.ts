@@ -55,6 +55,11 @@ const router = createRouter({
       name: 'keys',
       component: () => import('@/pages/KeysPage.vue'),
     },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('@/pages/ProfilePage.vue'),
+    },
   ],
 })
 

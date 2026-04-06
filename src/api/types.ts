@@ -6,11 +6,6 @@ export interface UserInfo {
   created_at: string
 }
 
-export interface LoginRequest {
-  username: string
-  password: string
-}
-
 export interface KeyInfo {
   id: string
   name: string
@@ -56,6 +51,38 @@ export interface UsageResponse {
   daily: DailyUsage[]
   period_start: string
   period_end: string
+}
+
+export interface UpdateProfileRequest {
+  name: string
+}
+
+export interface ExportProfile {
+  email: string
+  name: string
+  oauth_provider: string
+  created_at: string
+}
+
+export interface ExportApiKey {
+  name: string
+  key_prefix: string
+  created_at: string
+  last_used_at: string | null
+  is_active: boolean
+}
+
+export interface ExportUsageEntry {
+  timestamp: string
+  input_tokens: number
+  output_tokens: number
+}
+
+export interface DataExportResponse {
+  exported_at: string
+  profile: ExportProfile
+  api_keys: ExportApiKey[]
+  usage_logs: ExportUsageEntry[]
 }
 
 export interface ChatMessage {
