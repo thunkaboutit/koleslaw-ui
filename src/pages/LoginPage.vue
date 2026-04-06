@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { api, ApiError } from '@/api/client'
-import BaseButton from '@/components/BaseButton.vue'
+import { useRoute } from 'vue-router'
+import { api } from '@/api/client'
 import mascotSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
 
-const auth = useAuthStore()
-const router = useRouter()
+const route = useRoute()
 
-const username = ref('')
-const password = ref('')
+const loading = ref<string | null>(null)
 const error = ref('')
-const submitting = ref(false)
-const socialLoading = ref<string | null>(null)
 const enabledProviders = ref<string[]>([])
 
 onMounted(async () => {
@@ -22,28 +16,16 @@ onMounted(async () => {
   } catch {
     enabledProviders.value = []
   }
+
+  if (route.query.error) {
+    const msg = route.query.error_description || route.query.error
+    error.value = typeof msg === 'string' ? msg : 'Sign-in failed. Please try again.'
+  }
 })
 
-async function handleLogin() {
-  if (!username.value || !password.value) return
-  error.value = ''
-  submitting.value = true
-  try {
-    await auth.login(username.value, password.value)
-    router.push('/dashboard')
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 401) {
-      error.value = 'Invalid username or password'
-    } else {
-      error.value = 'Something went wrong. Please try again.'
-    }
-  } finally {
-    submitting.value = false
-  }
-}
-
 function loginWith(provider: string) {
-  socialLoading.value = provider
+  loading.value = provider
+  error.value = ''
   window.location.href = `/auth/${provider}`
 }
 
@@ -79,42 +61,7 @@ const providers = computed(() => allProviders.filter((p) => enabledProviders.val
       <h1 class="login__title"><RouterLink to="/" class="login__title-link">Koleslaw</RouterLink></h1>
       <p class="login__subtitle">Developer Portal</p>
 
-      <form class="login__form" @submit.prevent="handleLogin">
-        <div class="form-group">
-          <label class="form-label" for="username">Username</label>
-          <input
-            id="username"
-            v-model="username"
-            class="form-input"
-            type="text"
-            autocomplete="username"
-            autofocus
-          />
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="password">Password</label>
-          <input
-            id="password"
-            v-model="password"
-            class="form-input"
-            type="password"
-            autocomplete="current-password"
-          />
-        </div>
-        <p v-if="error" class="login__error">{{ error }}</p>
-        <BaseButton
-          type="submit"
-          :disabled="!username || !password || submitting"
-          class="login__submit"
-        >
-          {{ submitting ? 'Signing in...' : 'Sign in' }}
-        </BaseButton>
-      </form>
-
-      <template v-if="providers.length">
-      <div class="login__divider">
-        <span>or</span>
-      </div>
+      <p v-if="error" class="login__error" role="alert">{{ error }}</p>
 
       <div class="login__providers">
         <button
@@ -122,10 +69,10 @@ const providers = computed(() => allProviders.filter((p) => enabledProviders.val
           :key="provider.id"
           class="login__provider"
           :class="`login__provider--${provider.id}`"
-          :disabled="socialLoading !== null"
+          :disabled="loading !== null"
           @click="loginWith(provider.id)"
         >
-          <span v-if="socialLoading === provider.id" class="login__spinner" aria-hidden="true"></span>
+          <span v-if="loading === provider.id" class="login__spinner" aria-hidden="true"></span>
           <template v-else>
             <!-- Google -->
             <svg
@@ -196,10 +143,9 @@ const providers = computed(() => allProviders.filter((p) => enabledProviders.val
             </svg>
           </template>
 
-          {{ socialLoading === provider.id ? 'Redirecting...' : provider.label }}
+          {{ loading === provider.id ? 'Redirecting...' : provider.label }}
         </button>
       </div>
-      </template>
 
       <p class="login__signup">
         Don't have an account?
@@ -331,64 +277,13 @@ const providers = computed(() => allProviders.filter((p) => enabledProviders.val
   opacity: 0.7;
 }
 
-.login__form {
-  text-align: left;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin-bottom: 0.375rem;
-  color: var(--color-heading);
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border-hover);
-  border-radius: var(--radius);
-  background: var(--color-background);
-  color: var(--color-text);
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-}
-
-.form-input:focus {
-  outline: 2px solid var(--color-primary);
-  outline-offset: -1px;
-}
-
 .login__error {
   color: var(--color-danger);
   font-size: 0.8125rem;
-  margin-bottom: 0.75rem;
-}
-
-.login__submit {
-  width: 100%;
-  justify-content: center;
-}
-
-.login__divider {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin: 1.5rem 0;
-  color: var(--color-text);
-  opacity: 0.5;
-  font-size: 0.8125rem;
-}
-
-.login__divider::before,
-.login__divider::after {
-  content: '';
-  flex: 1;
-  border-top: 1px solid var(--color-border);
+  margin-bottom: 1rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--color-danger-bg);
+  border-radius: var(--radius);
 }
 
 /* ─── Provider buttons ─── */
