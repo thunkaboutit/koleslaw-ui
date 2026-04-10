@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { useMarkdown } from '@/composables/useMarkdown'
 import BaseModal from '@/components/BaseModal.vue'
+import PlatformActionBar from '@/components/PlatformActionBar.vue'
 
 const emit = defineEmits<{
   'update:submitting': [value: boolean]
@@ -472,6 +473,7 @@ onUnmounted(() => {
         <div class="response-text markdown-body" v-html="renderedResponse" />
         <span v-if="chat.sending" class="enhance__cursor" />
       </div>
+      <PlatformActionBar v-if="hasResponse" :enhanced-prompt="enhancedPrompt" />
     </div>
   </div>
 
