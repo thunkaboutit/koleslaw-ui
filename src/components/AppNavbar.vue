@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useChatStore } from '@/stores/chat'
 import { useRouter } from 'vue-router'
 
 const auth = useAuthStore()
+const chat = useChatStore()
 const router = useRouter()
 
 const scrolled = ref(false)
@@ -30,7 +32,7 @@ async function signOut() {
         </RouterLink>
         <div class="navbar__links">
           <template v-if="auth.user">
-            <RouterLink to="/chat" class="navbar__link">New Chat</RouterLink>
+            <RouterLink to="/chat" class="navbar__link" @click="chat.clearChat()">New Chat</RouterLink>
             <RouterLink to="/dashboard" class="navbar__link">Dashboard</RouterLink>
             <RouterLink to="/keys" class="navbar__link">API Keys</RouterLink>
           </template>

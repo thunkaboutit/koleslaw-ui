@@ -200,6 +200,34 @@ async function submitPrompt() {
   await chat.send(prefixPrompt(text), files)
 }
 
+function clearEnhancement() {
+  userInput.value = ''
+  responseText.value = ''
+  copied.value = false
+  isSubmitting.value = false
+  chat.clearChat()
+  clearFiles()
+  nextTick(() => {
+    autoResize()
+    enhanceTextarea.value?.focus()
+  })
+}
+
+/* Reset local state when the chat store is cleared externally (e.g. navbar "New Chat" link) */
+watch(
+  () => chat.messages.length,
+  (len) => {
+    if (len === 0 && responseText.value) {
+      userInput.value = ''
+      responseText.value = ''
+      copied.value = false
+      isSubmitting.value = false
+      clearFiles()
+      nextTick(() => autoResize())
+    }
+  },
+)
+
 async function copyToClipboard() {
   const text = enhancedPrompt.value
   try {
@@ -460,20 +488,24 @@ onUnmounted(() => {
     >
       <div class="enhance__response-header">
         <h3 class="enhance__response-title">Enhanced Prompt</h3>
-        <button
-          v-if="hasResponse"
-          class="enhance__copy-btn"
-          :class="{ 'enhance__copy-btn--copied': copied }"
-          @click="copyToClipboard"
-        >
-          {{ copied ? 'Copied!' : 'Copy' }}
-        </button>
+        <div v-if="hasResponse" class="enhance__response-actions">
+          <button class="enhance__clear-btn" @click="clearEnhancement">
+            Clear
+          </button>
+          <button
+            class="enhance__copy-btn"
+            :class="{ 'enhance__copy-btn--copied': copied }"
+            @click="copyToClipboard"
+          >
+            {{ copied ? 'Copied!' : 'Copy' }}
+          </button>
+        </div>
       </div>
       <div class="enhance__response-body">
         <div class="response-text markdown-body" v-html="renderedResponse" />
         <span v-if="chat.sending" class="enhance__cursor" />
       </div>
-      <PlatformActionBar v-if="hasResponse" :enhanced-prompt="enhancedPrompt" />
+      <PlatformActionBar v-if="hasResponse" :enhanced-prompt="enhancedPrompt" @clear="clearEnhancement" />
     </div>
   </div>
 
@@ -791,6 +823,29 @@ onUnmounted(() => {
   font-size: 1rem;
   font-weight: 700;
   color: var(--color-heading);
+}
+
+.enhance__response-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.enhance__clear-btn {
+  background: transparent;
+  border: 1px solid var(--color-border-hover);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.enhance__clear-btn:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 
 .enhance__copy-btn {

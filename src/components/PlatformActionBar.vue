@@ -6,6 +6,10 @@ const props = defineProps<{
   enhancedPrompt: string
 }>()
 
+const emit = defineEmits<{
+  clear: []
+}>()
+
 const promptRef = toRef(props, 'enhancedPrompt')
 const { platforms, copiedPlatformId, copyToClipboard } = usePlatformLinks(promptRef)
 </script>
@@ -36,13 +40,18 @@ const { platforms, copiedPlatformId, copyToClipboard } = usePlatformLinks(prompt
         </button>
       </template>
     </div>
-    <button
-      class="platform-bar__copy-btn"
-      :class="{ 'platform-bar__copy-btn--copied': copiedPlatformId === '_copy' }"
-      @click="copyToClipboard('_copy')"
-    >
-      {{ copiedPlatformId === '_copy' ? 'Copied!' : 'Copy' }}
-    </button>
+    <div class="platform-bar__actions">
+      <button class="platform-bar__clear-btn" @click="emit('clear')">
+        Clear
+      </button>
+      <button
+        class="platform-bar__copy-btn"
+        :class="{ 'platform-bar__copy-btn--copied': copiedPlatformId === '_copy' }"
+        @click="copyToClipboard('_copy')"
+      >
+        {{ copiedPlatformId === '_copy' ? 'Copied!' : 'Copy' }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -100,8 +109,31 @@ const { platforms, copiedPlatformId, copyToClipboard } = usePlatformLinks(prompt
   line-height: 1;
 }
 
-.platform-bar__copy-btn {
+.platform-bar__actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.platform-bar__clear-btn {
+  background: transparent;
+  border: 1px solid var(--color-border-hover);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text);
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+}
+
+.platform-bar__clear-btn:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.platform-bar__copy-btn {
   background: transparent;
   border: 1px solid var(--color-border-hover);
   border-radius: var(--radius);
