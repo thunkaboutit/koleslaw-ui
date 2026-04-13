@@ -155,4 +155,30 @@ const { platforms, copiedPlatformId, copyToClipboard } = usePlatformLinks(prompt
   color: var(--color-success);
   background: var(--color-success-bg);
 }
+
+/* ─── Mobile: stack buttons at equal width ─── */
+@media (max-width: 600px) {
+  .platform-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .platform-bar__buttons {
+    flex-direction: column;
+  }
+
+  .platform-bar__btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .platform-bar__actions {
+    margin-left: 0;
+  }
+
+  .platform-bar__actions > * {
+    flex: 1;
+    text-align: center;
+  }
+}
 </style>
