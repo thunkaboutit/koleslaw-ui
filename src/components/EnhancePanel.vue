@@ -116,7 +116,10 @@ const responseText = ref('')
 function cleanResponse(raw: string): string {
   return raw
     .replace(/^---\n?/gm, '')
-    .replace(/^\s*enhanced\s+prompt\s*:?\s*\n*/i, '')
+    .replace(
+      /^\s*(?:[#*_`]*\s*)*(?:here(?:'s| is)(?: your| the)?\s+)?enhanced\s+prompt\s*(?:[#*_`]*\s*)*:?\s*\n*/i,
+      '',
+    )
     .trim()
 }
 
