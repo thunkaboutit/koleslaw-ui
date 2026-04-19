@@ -16,6 +16,7 @@
 .border-frame {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -39,6 +40,7 @@
   position: fixed;
   z-index: 100;
   pointer-events: none;
+  will-change: transform;
 }
 
 .border-frame__edge--top,

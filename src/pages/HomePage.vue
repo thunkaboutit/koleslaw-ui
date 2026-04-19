@@ -175,7 +175,6 @@ function setSectionRef(idx: number) {
   padding: 3rem 0 2rem;
   max-height: 800px;
   overflow: hidden;
-  transition: opacity 0.4s ease, max-height 0.5s ease 0.1s, padding 0.5s ease 0.1s;
 }
 
 .hero--hidden {
@@ -183,6 +182,15 @@ function setSectionRef(idx: number) {
   max-height: 0;
   padding: 0;
   pointer-events: none;
+  animation: heroCollapse 0.5s ease forwards;
+}
+
+@keyframes heroCollapse {
+  from {
+    opacity: 1;
+    max-height: 800px;
+    padding: 3rem 0 2rem;
+  }
 }
 
 .hero__inner {
@@ -212,6 +220,9 @@ function setSectionRef(idx: number) {
   position: absolute;
   z-index: 2;
   animation: bob 3s ease-in-out infinite;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
 }
 
 .floating-icon--1 {
@@ -247,6 +258,9 @@ function setSectionRef(idx: number) {
   font-weight: 700;
   animation: bob 2.5s ease-in-out infinite;
   opacity: 0.7;
+  pointer-events: none;
+  user-select: none;
+  will-change: transform;
 }
 
 .sparkle--1 {
@@ -352,7 +366,6 @@ function setSectionRef(idx: number) {
 /* ─── Enhance ─── */
 .enhance {
   padding: 2rem 0;
-  transition: flex 0.4s ease;
 }
 
 .enhance--expanded {
