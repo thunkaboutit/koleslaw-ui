@@ -20,13 +20,13 @@ regarding your data.
 The data controller for this Service is:
 
 **Thunk About It**
-P.O. Box 1234
-Alpharetta, GA 30009
+3080 Monroe Way
+Alpharetta, GA 30004
 United States of America
-Email: privacy@koleslaw.ai
+Email: cp@thunkabout.it
 
 If you are in the European Economic Area (EEA) and wish to contact our representative, please
-email: [eu-representative@koleslaw.ai]
+email: cp@thunkabout.it
 
 ## Data Collected
 
@@ -150,7 +150,7 @@ Kingdom, or Switzerland, your data may be transferred to and processed in a coun
 on [Standard Contractual Clauses (SCCs) approved by the European Commission / an adequacy decision / other lawful transfer mechanism]
 to ensure that your data receives adequate protection in accordance with GDPR Articles 44–49.
 
-You may request a copy of the applicable transfer safeguards by contacting us at privacy@koleslaw.ai.
+You may request a copy of the applicable transfer safeguards by contacting us at cp@thunkabout.it.
 
 ## Security
 
@@ -171,7 +171,7 @@ rest. We recommend that you secure your device with a strong password and keep y
 ## Your Rights
 
 Depending on your location, you have rights regarding your personal data as described below. To exercise any of these
-rights, contact us at privacy@koleslaw.ai with a description of your request. We may need to verify your identity before
+rights, contact us at cp@thunkabout.it with a description of your request. We may need to verify your identity before
 fulfilling your request.
 
 ### For All Users
@@ -212,14 +212,14 @@ requests on your behalf.
 ### For Residents of Other US States
 
 If you reside in Virginia, Colorado, Connecticut, or another state with an applicable consumer privacy law, you may have
-similar rights to those described above. Contact us at privacy@koleslaw.ai, and we will process your request in
+similar rights to those described above. Contact us at cp@thunkabout.it, and we will process your request in
 accordance with applicable law.
 
 ## Children's Privacy
 
 This Service is not directed at children under the age of 16. We do not knowingly collect personal data from children
 under 16. If you believe that a child under 16 has provided us with personal data through the Site, the Extension, or
-the API, please contact us at privacy@koleslaw.ai and we will promptly delete it.
+the API, please contact us at cp@thunkabout.it and we will promptly delete it.
 
 ## Healthcare Data Disclaimer
 
@@ -251,7 +251,7 @@ effect constitutes your acceptance of the updated policy.
 
 If you have questions about this privacy policy or wish to exercise your data rights, contact us at:
 
-**Email:** privacy@koleslaw.ai
+**Email:** cp@thunkabout.it
 
 If you are in the EEA and are not satisfied with our response, you have the right to lodge a complaint with your local
 data protection supervisory authority.
