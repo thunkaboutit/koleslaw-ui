@@ -49,6 +49,7 @@ const placeholder = PLACEHOLDERS[Math.floor(Math.random() * PLACEHOLDERS.length)
 const userInput = ref('')
 const copied = ref(false)
 const showPreview = ref(false)
+const thinkingExpanded = ref(false)
 const responseRef = ref<HTMLElement | null>(null)
 const enhanceTextarea = ref<HTMLTextAreaElement | null>(null)
 
@@ -131,6 +132,15 @@ const limitReached = computed(() => !auth.user && promptCount.value >= MAX_PROMP
 const renderedResponse = computed(() => renderMarkdown(enhancedPrompt.value))
 const renderedPreview = computed(() => renderMarkdown(userInput.value))
 
+/* ── Thinking block ── */
+const showThinkingBlock = computed(
+  () => !!(chat.isThinking || chat.streamingThinking || chat.lastThinkingContent),
+)
+const thinkingContent = computed(() => chat.streamingThinking || chat.lastThinkingContent)
+const renderedThinking = computed(() =>
+  thinkingContent.value ? renderMarkdown(thinkingContent.value) : '',
+)
+
 /* Notify parent when submitting state changes */
 watch(isSubmitting, (val) => emit('update:submitting', val))
 
@@ -150,6 +160,22 @@ watch(
         responseRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' })
       })
     }
+  },
+)
+
+/* Auto-expand thinking block when thinking starts */
+watch(
+  () => chat.isThinking,
+  (thinking) => {
+    if (thinking) thinkingExpanded.value = true
+  },
+)
+
+/* Auto-collapse thinking block when content starts streaming */
+watch(
+  () => chat.streamingContent,
+  (content) => {
+    if (content && !chat.isThinking) thinkingExpanded.value = false
   },
 )
 
@@ -208,6 +234,7 @@ function clearEnhancement() {
   responseText.value = ''
   copied.value = false
   isSubmitting.value = false
+  thinkingExpanded.value = false
   chat.clearChat()
   clearFiles()
   nextTick(() => {
@@ -225,6 +252,7 @@ watch(
       responseText.value = ''
       copied.value = false
       isSubmitting.value = false
+      thinkingExpanded.value = false
       clearFiles()
       nextTick(() => autoResize())
     }
@@ -462,18 +490,34 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Thinking block (collapsible) -->
+    <!-- Thinking block (collapsible, streamed) -->
     <div
+      v-if="showThinkingBlock"
       class="thinking-block"
-      :class="{ 'thinking-block--open': chat.sending }"
       role="status"
-      aria-label="Processing status"
-      aria-live="polite"
+      aria-label="Model thinking process"
     >
-      <div class="thinking-block__inner">
-        <span class="thinking-block__spinner" aria-hidden="true" />
-        <span class="thinking-block__text">Thinking&hellip;</span>
-      </div>
+      <button
+        class="thinking-block__header"
+        :aria-expanded="thinkingExpanded"
+        @click="thinkingExpanded = !thinkingExpanded"
+      >
+        <span v-if="chat.isThinking" class="thinking-block__spinner" aria-hidden="true" />
+        <span
+          v-else
+          class="thinking-block__chevron"
+          :class="{ 'thinking-block__chevron--open': thinkingExpanded }"
+          aria-hidden="true"
+        >&#9654;</span>
+        <span class="thinking-block__text">
+          {{ chat.isThinking ? 'Thinking\u2026' : 'Thought process' }}
+        </span>
+      </button>
+      <div
+        v-if="thinkingExpanded && thinkingContent"
+        class="thinking-block__body markdown-body"
+        v-html="renderedThinking"
+      />
     </div>
 
     <!-- Error message -->
@@ -752,31 +796,43 @@ onUnmounted(() => {
 
 /* ─── Thinking Block ─── */
 .thinking-block {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transition: max-height 0.4s ease, opacity 0.3s ease;
-}
-
-.thinking-block--open {
-  max-height: 80px;
-  opacity: 1;
-}
-
-.thinking-block__inner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
   background: var(--color-background-soft, var(--color-card));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.thinking-block__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.thinking-block__header:hover {
+  background: rgba(26, 39, 68, 0.04);
+}
+
+.thinking-block__chevron {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  color: var(--wl-warm-gray);
+  transition: transform 0.2s ease;
+}
+
+.thinking-block__chevron--open {
+  transform: rotate(90deg);
 }
 
 .thinking-block__spinner {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid var(--color-border);
   border-top-color: var(--wl-navy);
   border-radius: 50%;
@@ -791,7 +847,16 @@ onUnmounted(() => {
   font-family: var(--font-body);
   font-style: italic;
   color: var(--wl-warm-gray);
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
+}
+
+.thinking-block__body {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-border);
+  max-height: 300px;
+  overflow-y: auto;
+  font-size: 0.8125rem;
+  color: var(--wl-warm-gray);
 }
 
 /* ─── Error ─── */

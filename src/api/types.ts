@@ -99,6 +99,7 @@ export interface ChatRequest {
 export interface ChatChunk {
   delta: string
   finish_reason: string | null
+  type?: 'text' | 'thinking'
 }
 
 export interface ChatResponse {

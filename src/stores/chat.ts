@@ -29,6 +29,9 @@ export const useChatStore = defineStore('chat', () => {
   const sending = ref(false)
   const error = ref<string | null>(null)
   const streamingContent = ref('')
+  const streamingThinking = ref('')
+  const isThinking = ref(false)
+  const lastThinkingContent = ref('')
   let abortController: AbortController | null = null
 
   const hasMessages = computed(() => messages.value.length > 0)
@@ -43,10 +46,19 @@ export const useChatStore = defineStore('chat', () => {
 
     sending.value = true
     streamingContent.value = ''
+    streamingThinking.value = ''
+    lastThinkingContent.value = ''
+    isThinking.value = false
     abortController = new AbortController()
 
-    const onChunk = (chunk: { delta: string }) => {
-      streamingContent.value += chunk.delta
+    const onChunk = (chunk: { delta: string; type?: 'text' | 'thinking' }) => {
+      if (chunk.type === 'thinking') {
+        streamingThinking.value += chunk.delta
+        if (!isThinking.value) isThinking.value = true
+      } else {
+        if (isThinking.value) isThinking.value = false
+        streamingContent.value += chunk.delta
+      }
     }
 
     try {
@@ -70,7 +82,10 @@ export const useChatStore = defineStore('chat', () => {
       }
     } finally {
       sending.value = false
+      lastThinkingContent.value = streamingThinking.value
       streamingContent.value = ''
+      streamingThinking.value = ''
+      isThinking.value = false
       abortController = null
     }
   }
@@ -83,9 +98,24 @@ export const useChatStore = defineStore('chat', () => {
     messages.value = []
     error.value = null
     streamingContent.value = ''
+    streamingThinking.value = ''
+    isThinking.value = false
+    lastThinkingContent.value = ''
     cancelStream()
     localStorage.removeItem(STORAGE_KEY)
   }
 
-  return { messages, sending, error, streamingContent, hasMessages, send, cancelStream, clearChat }
+  return {
+    messages,
+    sending,
+    error,
+    streamingContent,
+    streamingThinking,
+    isThinking,
+    lastThinkingContent,
+    hasMessages,
+    send,
+    cancelStream,
+    clearChat,
+  }
 })
