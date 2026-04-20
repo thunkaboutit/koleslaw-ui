@@ -50,6 +50,8 @@ const userInput = ref('')
 const copied = ref(false)
 const showPreview = ref(false)
 const thinkingExpanded = ref(false)
+const thinkingBodyRef = ref<HTMLElement | null>(null)
+const thinkingUserScrolled = ref(false)
 const responseRef = ref<HTMLElement | null>(null)
 const enhanceTextarea = ref<HTMLTextAreaElement | null>(null)
 
@@ -167,9 +169,33 @@ watch(
 watch(
   () => chat.isThinking,
   (thinking) => {
-    if (thinking) thinkingExpanded.value = true
+    if (thinking) {
+      thinkingExpanded.value = true
+      thinkingUserScrolled.value = false
+    }
   },
 )
+
+/* Auto-scroll thinking body as streamed thinking arrives */
+watch(
+  () => chat.streamingThinking,
+  () => {
+    if (chat.isThinking && !thinkingUserScrolled.value) {
+      nextTick(() => {
+        const el = thinkingBodyRef.value
+        if (el) el.scrollTop = el.scrollHeight
+      })
+    }
+  },
+)
+
+/* Detect user scrolling up in the thinking body */
+function onThinkingScroll() {
+  const el = thinkingBodyRef.value
+  if (!el) return
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 20
+  thinkingUserScrolled.value = !atBottom
+}
 
 /* Auto-collapse thinking block when content starts streaming */
 watch(
@@ -515,8 +541,10 @@ onUnmounted(() => {
       </button>
       <div
         v-if="thinkingExpanded && thinkingContent"
+        ref="thinkingBodyRef"
         class="thinking-block__body markdown-body"
         v-html="renderedThinking"
+        @scroll="onThinkingScroll"
       />
     </div>
 
