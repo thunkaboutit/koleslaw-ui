@@ -54,5 +54,11 @@
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "core-js",
+      "esbuild"
+    ]
   }
 }
