@@ -138,6 +138,9 @@ const renderedPreview = computed(() => renderMarkdown(userInput.value))
 const showThinkingBlock = computed(
   () => !!(chat.isThinking || chat.streamingThinking || chat.lastThinkingContent),
 )
+const showWaitingSpinner = computed(
+  () => chat.sending && !showThinkingBlock.value && !enhancedPrompt.value,
+)
 const thinkingContent = computed(() => chat.streamingThinking || chat.lastThinkingContent)
 const renderedThinking = computed(() =>
   thinkingContent.value ? renderMarkdown(thinkingContent.value) : '',
@@ -516,6 +519,17 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Waiting spinner (shown after submit, before any stream content arrives) -->
+    <div
+      v-if="showWaitingSpinner"
+      class="enhance__waiting"
+      role="status"
+      aria-live="polite"
+    >
+      <span class="enhance__waiting-spinner" aria-hidden="true" />
+      <span class="enhance__waiting-text">Woof is fetching&hellip;</span>
+    </div>
+
     <!-- Thinking block (collapsible, streamed) -->
     <div
       v-if="showThinkingBlock"
@@ -820,6 +834,36 @@ onUnmounted(() => {
 .enhance__file-remove:hover {
   color: var(--color-danger);
   background: var(--color-danger-bg);
+}
+
+/* ─── Waiting spinner ─── */
+.enhance__waiting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.enhance__waiting-spinner {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--wl-navy);
+  border-right-color: var(--wl-gold);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.enhance__waiting-text {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.875rem;
+  color: var(--wl-warm-gray);
 }
 
 /* ─── Thinking Block ─── */
