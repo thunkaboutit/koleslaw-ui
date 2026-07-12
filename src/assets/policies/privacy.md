@@ -23,7 +23,7 @@ The data controller for this Service is:
 3080 Monroe Way
 Alpharetta, GA 30004
 United States of America
-Email: cp@thunkabout.it
+Email: legal@thunkabout.it
 
 If you are in the European Economic Area (EEA) and wish to contact our representative, please
 email: cp@thunkabout.it
