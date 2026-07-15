@@ -1,24 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onUnmounted, onBeforeUnmount } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { useChatStore } from '@/stores/chat'
 import { useMarkdown } from '@/composables/useMarkdown'
-import BaseModal from '@/components/BaseModal.vue'
 import PlatformActionBar from '@/components/PlatformActionBar.vue'
 
 const emit = defineEmits<{
   'update:submitting': [value: boolean]
 }>()
 
-const auth = useAuthStore()
 const chat = useChatStore()
 const { renderMarkdown } = useMarkdown()
-
-/* ── Prompt usage tracking ── */
-const PROMPT_COUNT_KEY = 'koleslaw-prompt-count'
-const MAX_PROMPTS = 10
-const promptCount = ref(parseInt(localStorage.getItem(PROMPT_COUNT_KEY) ?? '0', 10))
-const showLimitModal = ref(false)
 
 /* ── Placeholder rotation ── */
 const PLACEHOLDERS = [
@@ -130,7 +121,6 @@ const enhancedPrompt = computed(
   () => cleanResponse(chat.streamingContent || responseText.value),
 )
 const hasResponse = computed(() => responseText.value.length > 0 && !chat.sending)
-const limitReached = computed(() => !auth.user && promptCount.value >= MAX_PROMPTS)
 const renderedResponse = computed(() => renderMarkdown(enhancedPrompt.value))
 const renderedPreview = computed(() => renderMarkdown(userInput.value))
 
@@ -208,7 +198,7 @@ watch(
   },
 )
 
-/* Capture completed response, increment counter, or reset on error/cancel */
+/* Capture completed response, or reset on error/cancel */
 watch(
   () => chat.sending,
   (sending, wasSending) => {
@@ -219,10 +209,6 @@ watch(
         const last = chat.messages[chat.messages.length - 1]
         if (last?.role === 'assistant') {
           responseText.value = last.content
-          if (!auth.user) {
-            promptCount.value++
-            localStorage.setItem(PROMPT_COUNT_KEY, String(promptCount.value))
-          }
         } else {
           isSubmitting.value = false
         }
@@ -241,10 +227,6 @@ function prefixPrompt(text: string): string {
 async function submitPrompt() {
   const text = userInput.value.trim()
   if (!text || chat.sending) return
-  if (limitReached.value) {
-    showLimitModal.value = true
-    return
-  }
   // Snapshot files for this request — chips stay visible until submit completes
   const files = attachedFiles.value.length ? [...attachedFiles.value] : undefined
 
@@ -367,19 +349,6 @@ onUnmounted(() => {
 
 <template>
   <div class="enhance__container">
-    <!-- Usage indicator (anonymous users only) -->
-    <div v-if="!isSubmitting && !auth.user" class="enhance__usage">
-      <span class="enhance__usage-text">
-        {{ promptCount }} / {{ MAX_PROMPTS }} free prompts used
-      </span>
-      <div class="enhance__usage-bar">
-        <div
-          class="enhance__usage-fill"
-          :style="{ width: `${(promptCount / MAX_PROMPTS) * 100}%` }"
-        />
-      </div>
-    </div>
-
     <!-- Hidden file input -->
     <input
       ref="fileInputRef"
@@ -597,25 +566,6 @@ onUnmounted(() => {
       <PlatformActionBar v-if="hasResponse" :enhanced-prompt="enhancedPrompt" @clear="clearEnhancement" />
     </div>
   </div>
-
-  <!-- Usage limit modal -->
-  <BaseModal v-if="showLimitModal" @close="showLimitModal = false">
-    <template #header>
-      <h3>Free Limit Reached</h3>
-    </template>
-    <p>
-      You've used all <strong>{{ MAX_PROMPTS }}</strong> free prompt enhancements.
-      Sign up for an account to continue enhancing your prompts with Woof.
-    </p>
-    <template #footer>
-      <RouterLink to="/signup" class="enhance__btn enhance__btn--submit">
-        Sign Up
-      </RouterLink>
-      <button class="enhance__btn enhance__btn--cancel" @click="showLimitModal = false">
-        Maybe Later
-      </button>
-    </template>
-  </BaseModal>
 </template>
 
 <style scoped>
@@ -624,34 +574,6 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.enhance__usage {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.enhance__usage-text {
-  font-family: var(--font-body);
-  font-size: 0.8125rem;
-  color: var(--wl-warm-gray);
-  white-space: nowrap;
-}
-
-.enhance__usage-bar {
-  flex: 1;
-  height: 4px;
-  background: var(--color-border);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.enhance__usage-fill {
-  height: 100%;
-  background: var(--wl-gold);
-  border-radius: 2px;
-  transition: width 0.4s ease;
 }
 
 .enhance__input-area {
