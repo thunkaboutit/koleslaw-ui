@@ -1,6 +1,6 @@
 # koleslaw-developer-portal
 
-Vue 3 SPA developer portal for the prompt-enhance API. Provides auth, API key management, usage dashboard, and a chat/enhance playground.
+Vue 3 SPA developer portal for the koleslaw-api backend. Provides auth, API key management, usage dashboard, and a chat/enhance playground.
 
 ## Tech Stack
 
@@ -49,7 +49,7 @@ pnpm preview          # Preview production build
 
 ## Dev Proxy
 
-Vite proxies `/auth` and `/v1` to `http://localhost:8000` (the prompt-enhance API).
+Vite proxies `/auth` and `/v1` to `http://localhost:8000` (the koleslaw-api backend).
 
 ## Docker
 
