@@ -3,6 +3,27 @@ import type { ChatMessage, ChatChunk } from './types'
 const API_BASE = ''
 const PUBLIC_API_KEY = 'pk_live_fNuYW07Bf16zLFLbghxSPERYV4QS1SWF4-OuLJ5JcCE'
 
+// ── Error handling ──────────────────────────────────────────────────
+
+/* The API returns {"detail": ...} (FastAPI/HTTPException) or {"error": ...}
+   (ErrorResponse) bodies; surface the message instead of raw JSON. The 429
+   from the anonymous daily cap arrives here with user-facing copy. */
+async function throwApiError(response: Response): Promise<never> {
+  const text = await response.text().catch(() => response.statusText)
+  let message = text
+  try {
+    const body = JSON.parse(text)
+    message = body.detail || body.error || text
+  } catch {
+    // not JSON — keep the raw text
+  }
+  if (!message) {
+    message =
+      response.status === 429 ? 'Rate limit reached. Please try again later.' : response.statusText
+  }
+  throw new Error(message)
+}
+
 // ── Shared SSE parser ───────────────────────────────────────────────
 
 function parseSSEStream(
@@ -50,8 +71,7 @@ export async function sendChatStream(
   })
 
   if (!response.ok) {
-    const text = await response.text().catch(() => response.statusText)
-    throw new Error(text)
+    await throwApiError(response)
   }
 
   const reader = response.body?.getReader()
@@ -83,8 +103,7 @@ export async function sendChatStreamWithFiles(
   })
 
   if (!response.ok) {
-    const text = await response.text().catch(() => response.statusText)
-    throw new Error(text)
+    await throwApiError(response)
   }
 
   const reader = response.body?.getReader()
