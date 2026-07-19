@@ -55,22 +55,58 @@ function setSectionRef(idx: number) {
           <!-- Floating code bracket icons -->
           <span class="floating-icon floating-icon--1" aria-hidden="true">
             <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              <text x="2" y="22" font-family="var(--font-mono)" font-size="22" fill="#1a2744" opacity="0.6">&lt;/&gt;</text>
+              <text
+                x="2"
+                y="22"
+                font-family="var(--font-mono)"
+                font-size="22"
+                fill="#1a2744"
+                opacity="0.6"
+              >
+                &lt;/&gt;
+              </text>
             </svg>
           </span>
           <span class="floating-icon floating-icon--2" aria-hidden="true">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <text x="1" y="18" font-family="var(--font-mono)" font-size="18" fill="#c9a84c" opacity="0.7">&lt;/&gt;</text>
+              <text
+                x="1"
+                y="18"
+                font-family="var(--font-mono)"
+                font-size="18"
+                fill="#c9a84c"
+                opacity="0.7"
+              >
+                &lt;/&gt;
+              </text>
             </svg>
           </span>
           <span class="floating-icon floating-icon--3" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <text x="1" y="15" font-family="var(--font-mono)" font-size="15" fill="#1a2744" opacity="0.5">&lt;/&gt;</text>
+              <text
+                x="1"
+                y="15"
+                font-family="var(--font-mono)"
+                font-size="15"
+                fill="#1a2744"
+                opacity="0.5"
+              >
+                &lt;/&gt;
+              </text>
             </svg>
           </span>
           <span class="floating-icon floating-icon--4" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <text x="1" y="17" font-family="var(--font-mono)" font-size="17" fill="#5a6340" opacity="0.6">&lt;/&gt;</text>
+              <text
+                x="1"
+                y="17"
+                font-family="var(--font-mono)"
+                font-size="17"
+                fill="#5a6340"
+                opacity="0.6"
+              >
+                &lt;/&gt;
+              </text>
             </svg>
           </span>
           <!-- Sparkle decorations -->
@@ -84,23 +120,43 @@ function setSectionRef(idx: number) {
             Start Kolewoofing.
           </h1>
           <p class="hero__subtitle">
-            Koleslaw takes your rough prompt and turns it into exactly what AI
-            needs to hear. Better input, better output — it's not rocket science.
-            It's a barking cow.
+            Koleslaw takes your rough prompt and turns it into exactly what AI needs to hear. Better
+            input, better output — it's not rocket science. It's a barking cow.
           </p>
           <div class="hero__flow">
             <div class="flow-step">
               <span class="flow-step__icon flow-step__icon--rough" aria-hidden="true">
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                  <rect x="3" y="5" width="22" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                  <path d="M8 11h12M8 15h8M8 19h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="2 2"/>
+                  <rect
+                    x="3"
+                    y="5"
+                    width="22"
+                    height="18"
+                    rx="3"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M8 11h12M8 15h8M8 19h5"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-dasharray="2 2"
+                  />
                 </svg>
               </span>
               <span class="flow-step__label">Your prompt</span>
             </div>
             <span class="flow-arrow" aria-hidden="true">
               <svg width="24" height="14" viewBox="0 0 24 14" fill="none">
-                <path d="M0 7h20M16 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                  d="M0 7h20M16 1l6 6-6 6"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </span>
             <div class="flow-step">
@@ -111,30 +167,81 @@ function setSectionRef(idx: number) {
             </div>
             <span class="flow-arrow" aria-hidden="true">
               <svg width="24" height="14" viewBox="0 0 24 14" fill="none">
-                <path d="M0 7h20M16 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                  d="M0 7h20M16 1l6 6-6 6"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </span>
             <div class="flow-step">
               <span class="flow-step__icon flow-step__icon--enhanced" aria-hidden="true">
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                  <rect x="3" y="5" width="22" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                  <path d="M8 11h12M8 15h10M8 19h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                  <path d="M19 3l2 2-2 2" stroke="var(--wl-gold)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  <path d="M23 7l1 1-1 1" stroke="var(--wl-gold)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect
+                    x="3"
+                    y="5"
+                    width="22"
+                    height="18"
+                    rx="3"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M8 11h12M8 15h10M8 19h7"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M19 3l2 2-2 2"
+                    stroke="var(--wl-gold)"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M23 7l1 1-1 1"
+                    stroke="var(--wl-gold)"
+                    stroke-width="1.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </span>
               <span class="flow-step__label">Woofed up prompt</span>
             </div>
             <span class="flow-arrow" aria-hidden="true">
               <svg width="24" height="14" viewBox="0 0 24 14" fill="none">
-                <path d="M0 7h20M16 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                  d="M0 7h20M16 1l6 6-6 6"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </span>
             <div class="flow-step">
               <span class="flow-step__icon flow-step__icon--paste" aria-hidden="true">
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                  <circle cx="14" cy="14" r="11" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                  <path d="M9 14l3 3 7-7" stroke="var(--wl-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle
+                    cx="14"
+                    cy="14"
+                    r="11"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    fill="none"
+                  />
+                  <path
+                    d="M9 14l3 3 7-7"
+                    stroke="var(--wl-gold)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </span>
               <span class="flow-step__label">Paste anywhere</span>
@@ -155,7 +262,6 @@ function setSectionRef(idx: number) {
     >
       <EnhancePanel @update:submitting="isSubmitting = $event" />
     </section>
-
   </div>
 </template>
 
@@ -406,7 +512,6 @@ function setSectionRef(idx: number) {
   .hero__title {
     font-size: 2rem;
   }
-
 }
 
 @media (min-width: 769px) and (max-width: 1024px) {

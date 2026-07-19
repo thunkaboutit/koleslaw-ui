@@ -57,21 +57,11 @@ async function downloadPdf() {
 
     <p v-if="pdfError" class="pdf-error">
       PDF generation failed.
-      <a
-        href="javascript:void(0)"
-        role="button"
-        @click="downloadPdf"
-      >
-        Try again
-      </a>
+      <a href="javascript:void(0)" role="button" @click="downloadPdf"> Try again </a>
       or use your browser's Print &rarr; Save as PDF.
     </p>
 
-    <div
-      ref="contentEl"
-      class="policy-content markdown-body"
-      v-html="renderedHtml"
-    />
+    <div ref="contentEl" class="policy-content markdown-body" v-html="renderedHtml" />
   </div>
 </template>
 

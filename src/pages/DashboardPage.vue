@@ -124,7 +124,9 @@ const periods = [
   cursor: pointer;
   border-radius: var(--radius);
   color: var(--color-text);
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .period-btn.active {

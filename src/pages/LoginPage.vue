@@ -50,15 +50,13 @@ const providers = computed(() => allProviders.filter((p) => enabledProviders.val
 
     <!-- Peeking mascot -->
     <div class="peek" aria-hidden="true">
-      <img
-        :src="mascotSrc"
-        alt=""
-        class="peek__img"
-      />
+      <img :src="mascotSrc" alt="" class="peek__img" />
     </div>
 
     <div class="login__card">
-      <h1 class="login__title"><RouterLink to="/" class="login__title-link">Koleslaw</RouterLink></h1>
+      <h1 class="login__title">
+        <RouterLink to="/" class="login__title-link">Koleslaw</RouterLink>
+      </h1>
       <p class="login__subtitle">Developer Portal</p>
 
       <p v-if="error" class="login__error" role="alert">{{ error }}</p>
@@ -232,11 +230,21 @@ const providers = computed(() => allProviders.filter((p) => enabledProviders.val
 }
 
 @keyframes peekFromLeft {
-  0%   { transform: translateX(0); }
-  3%   { transform: translateX(160px); }
-  6%   { transform: translateX(160px); }
-  9%   { transform: translateX(0); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+  3% {
+    transform: translateX(160px);
+  }
+  6% {
+    transform: translateX(160px);
+  }
+  9% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 /* ─── Login card ─── */
@@ -388,9 +396,20 @@ const providers = computed(() => allProviders.filter((p) => enabledProviders.val
     display: none;
   }
 
-  .spot--1 { width: 160px; height: 120px; }
-  .spot--2 { width: 120px; height: 100px; }
-  .spot--3 { width: 140px; height: 110px; }
-  .spot--5 { display: none; }
+  .spot--1 {
+    width: 160px;
+    height: 120px;
+  }
+  .spot--2 {
+    width: 120px;
+    height: 100px;
+  }
+  .spot--3 {
+    width: 140px;
+    height: 110px;
+  }
+  .spot--5 {
+    display: none;
+  }
 }
 </style>

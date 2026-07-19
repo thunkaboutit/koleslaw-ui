@@ -23,10 +23,7 @@ function shortDate(iso: string) {
         class="chart__col"
         :title="`${day.date}: ${day.requests} requests`"
       >
-        <div
-          class="chart__bar"
-          :style="{ height: `${(day.requests / maxRequests) * 100}%` }"
-        ></div>
+        <div class="chart__bar" :style="{ height: `${(day.requests / maxRequests) * 100}%` }"></div>
         <span class="chart__label">{{ shortDate(day.date) }}</span>
       </div>
     </div>

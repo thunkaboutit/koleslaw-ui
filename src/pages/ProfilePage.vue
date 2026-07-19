@@ -63,9 +63,7 @@ const deleteConfirmation = ref('')
 const deleting = ref(false)
 const deleteError = ref('')
 
-const deleteConfirmationValid = computed(
-  () => deleteConfirmation.value === auth.user?.email,
-)
+const deleteConfirmationValid = computed(() => deleteConfirmation.value === auth.user?.email)
 
 async function handleDelete() {
   if (!deleteConfirmationValid.value) return

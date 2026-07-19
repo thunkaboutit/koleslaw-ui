@@ -125,7 +125,7 @@ All prompt data â€” whether submitted from the Site, the Extension, or the API â
 sub-processors may handle your data in the course of providing the Service:
 
 | Sub-Processor                 | Purpose                       | Location                  |
-|-------------------------------|-------------------------------|---------------------------|
+| ----------------------------- | ----------------------------- | ------------------------- |
 | [Cloud provider, e.g., AWS]   | Infrastructure hosting        | [Region, e.g., US-East-1] |
 | [LLM provider, if applicable] | Prompt enhancement processing | [Region]                  |
 

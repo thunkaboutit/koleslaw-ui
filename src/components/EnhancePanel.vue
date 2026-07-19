@@ -14,13 +14,13 @@ const { renderMarkdown } = useMarkdown()
 /* ── Placeholder rotation ── */
 const PLACEHOLDERS = [
   'Type something ruff and let Woof polish it.',
-  'Paste your prompt here. Woof won\'t judge… much.',
+  "Paste your prompt here. Woof won't judge… much.",
   'Go ahead, throw Woof a bone. Any prompt will do.',
   'Your prompt called. It wants to be better.',
-  'Drop it like it\'s prompt.',
+  "Drop it like it's prompt.",
   'Woof accepts belly rubs and bad prompts.',
   'Don\'t worry, even "make it good" is a starting point.',
-  'This cow barks. Your prompt doesn\'t have to.',
+  "This cow barks. Your prompt doesn't have to.",
   'Moo? No. Woof? Yes. Prompt? Paste it.',
   'Enter your prompt — Woof will herd it into shape.',
   'You write the draft, Woof writes the craft.',
@@ -29,7 +29,7 @@ const PLACEHOLDERS = [
   'Feed Woof your prompt. Watch it come back golden.',
   'Warning: prompts may come back dramatically better.',
   'One small paste for you, one giant woof for promptkind.',
-  'Woof doesn\'t fetch — Woof enhances.',
+  "Woof doesn't fetch — Woof enhances.",
   'Your future self will thank you for pasting that prompt.',
   'Half-baked prompt? Woof has the oven ready.',
   'Toss your spaghetti prompt in here. Woof sorts the noodles.',
@@ -52,9 +52,23 @@ const attachedFiles = ref<File[]>([])
 const filePreviews = ref<string[]>([])
 // Block compressed/archive files only — everything else is accepted
 const BLOCKED_EXTENSIONS = new Set([
-  '.zip', '.gz', '.tar', '.tgz', '.bz2', '.xz', '.7z',
-  '.rar', '.zst', '.lz', '.lz4', '.cab', '.iso', '.dmg',
-  '.jar', '.war', '.ear',
+  '.zip',
+  '.gz',
+  '.tar',
+  '.tgz',
+  '.bz2',
+  '.xz',
+  '.7z',
+  '.rar',
+  '.zst',
+  '.lz',
+  '.lz4',
+  '.cab',
+  '.iso',
+  '.dmg',
+  '.jar',
+  '.war',
+  '.ear',
 ])
 
 function openFilePicker() {
@@ -89,7 +103,9 @@ function removeFile(index: number) {
 }
 
 function clearFiles() {
-  filePreviews.value.forEach((url) => { if (url) URL.revokeObjectURL(url) })
+  filePreviews.value.forEach((url) => {
+    if (url) URL.revokeObjectURL(url)
+  })
   attachedFiles.value = []
   filePreviews.value = []
 }
@@ -117,9 +133,7 @@ function cleanResponse(raw: string): string {
     .trim()
 }
 
-const enhancedPrompt = computed(
-  () => cleanResponse(chat.streamingContent || responseText.value),
-)
+const enhancedPrompt = computed(() => cleanResponse(chat.streamingContent || responseText.value))
 const hasResponse = computed(() => responseText.value.length > 0 && !chat.sending)
 const renderedResponse = computed(() => renderMarkdown(enhancedPrompt.value))
 const renderedPreview = computed(() => renderMarkdown(userInput.value))
@@ -217,7 +231,8 @@ watch(
   },
 )
 
-const ENHANCE_PREFIX_RE = /^(enhance|improve|rewrite|refine|rephrase|fix|optimize|polish|upgrade|rework)\b/i
+const ENHANCE_PREFIX_RE =
+  /^(enhance|improve|rewrite|refine|rephrase|fix|optimize|polish|upgrade|rework)\b/i
 
 function prefixPrompt(text: string): string {
   if (ENHANCE_PREFIX_RE.test(text)) return text
@@ -316,7 +331,8 @@ function toggleRecording() {
     if (last?.isFinal) {
       const transcript = last[0]?.transcript.trim()
       if (transcript) {
-        userInput.value += (userInput.value && !userInput.value.endsWith(' ') ? ' ' : '') + transcript
+        userInput.value +=
+          (userInput.value && !userInput.value.endsWith(' ') ? ' ' : '') + transcript
         autoResize()
       }
     }
@@ -331,7 +347,8 @@ function toggleRecording() {
     isRecording.value = false
     recognition = null
     if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-      chat.error = 'Microphone access was denied. Please allow microphone access in your browser settings.'
+      chat.error =
+        'Microphone access was denied. Please allow microphone access in your browser settings.'
     } else if (event.error !== 'aborted') {
       chat.error = `Speech recognition error: ${event.error}`
     }
@@ -359,10 +376,7 @@ onUnmounted(() => {
     />
 
     <!-- Input area -->
-    <div
-      class="enhance__input-area"
-      :class="{ 'enhance__input-area--expanded': isSubmitting }"
-    >
+    <div class="enhance__input-area" :class="{ 'enhance__input-area--expanded': isSubmitting }">
       <!-- Markdown preview (read-only) -->
       <div
         v-if="showPreview && userInput"
@@ -385,11 +399,7 @@ onUnmounted(() => {
 
       <!-- Attached file previews -->
       <div v-if="attachedFiles.length" class="enhance__files">
-        <div
-          v-for="(file, i) in attachedFiles"
-          :key="i"
-          class="enhance__file-chip"
-        >
+        <div v-for="(file, i) in attachedFiles" :key="i" class="enhance__file-chip">
           <img
             v-if="filePreviews[i]"
             :src="filePreviews[i]"
@@ -398,17 +408,24 @@ onUnmounted(() => {
           />
           <span v-else class="enhance__file-icon" aria-hidden="true">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M4 1h5l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z" stroke="currentColor" stroke-width="1.2" fill="none"/>
-              <path d="M9 1v4h4" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" fill="none"/>
+              <path
+                d="M4 1h5l4 4v9a1 1 0 01-1 1H4a1 1 0 01-1-1V2a1 1 0 011-1z"
+                stroke="currentColor"
+                stroke-width="1.2"
+                fill="none"
+              />
+              <path
+                d="M9 1v4h4"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linejoin="round"
+                fill="none"
+              />
             </svg>
           </span>
           <span class="enhance__file-name">{{ file.name }}</span>
           <span class="enhance__file-size">{{ formatFileSize(file.size) }}</span>
-          <button
-            class="enhance__file-remove"
-            aria-label="Remove file"
-            @click="removeFile(i)"
-          >
+          <button class="enhance__file-remove" aria-label="Remove file" @click="removeFile(i)">
             &times;
           </button>
         </div>
@@ -424,7 +441,12 @@ onUnmounted(() => {
             @click="openFilePicker"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path
+                d="M10 4v12M4 10h12"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
             </svg>
           </button>
           <button
@@ -435,13 +457,28 @@ onUnmounted(() => {
             @click="showPreview = !showPreview"
           >
             <svg v-if="!showPreview" width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              <path
+                d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+              />
+              <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none" />
             </svg>
             <svg v-else width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <path d="M3 17L17 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path
+                d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+              />
+              <circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5" fill="none" />
+              <path
+                d="M3 17L17 3"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
             </svg>
           </button>
           <span class="enhance__view-label">{{ showPreview ? 'Markdown' : 'Plain text' }}</span>
@@ -458,9 +495,24 @@ onUnmounted(() => {
           >
             <span v-if="isRecording" class="enhance__rec-dot" aria-hidden="true" />
             <svg v-else width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect x="7" y="2" width="6" height="10" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
-              <path d="M4 10a6 6 0 0012 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-              <path d="M10 16v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <rect
+                x="7"
+                y="2"
+                width="6"
+                height="10"
+                rx="3"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+              />
+              <path
+                d="M4 10a6 6 0 0012 0"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                fill="none"
+              />
+              <path d="M10 16v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
             </svg>
           </button>
           <button
@@ -470,7 +522,7 @@ onUnmounted(() => {
             aria-label="Cancel"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <rect x="4" y="4" width="12" height="12" rx="2" fill="currentColor"/>
+              <rect x="4" y="4" width="12" height="12" rx="2" fill="currentColor" />
             </svg>
           </button>
           <button
@@ -481,7 +533,13 @@ onUnmounted(() => {
             aria-label="Enhance"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path d="M3 10h14M11 4l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path
+                d="M3 10h14M11 4l6 6-6 6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
             </svg>
           </button>
         </div>
@@ -489,12 +547,7 @@ onUnmounted(() => {
     </div>
 
     <!-- Waiting spinner (shown after submit, before any stream content arrives) -->
-    <div
-      v-if="showWaitingSpinner"
-      class="enhance__waiting"
-      role="status"
-      aria-live="polite"
-    >
+    <div v-if="showWaitingSpinner" class="enhance__waiting" role="status" aria-live="polite">
       <span class="enhance__waiting-spinner" aria-hidden="true" />
       <span class="enhance__waiting-text">Woof is fetching&hellip;</span>
     </div>
@@ -517,7 +570,8 @@ onUnmounted(() => {
           class="thinking-block__chevron"
           :class="{ 'thinking-block__chevron--open': thinkingExpanded }"
           aria-hidden="true"
-        >&#9654;</span>
+          >&#9654;</span
+        >
         <span class="thinking-block__text">
           {{ chat.isThinking ? 'Thinking\u2026' : 'Thought process' }}
         </span>
@@ -547,9 +601,7 @@ onUnmounted(() => {
       <div class="enhance__response-header">
         <h3 class="enhance__response-title">Enhanced Prompt</h3>
         <div v-if="hasResponse" class="enhance__response-actions">
-          <button class="enhance__clear-btn" @click="clearEnhancement">
-            Clear
-          </button>
+          <button class="enhance__clear-btn" @click="clearEnhancement">Clear</button>
           <button
             class="enhance__copy-btn"
             :class="{ 'enhance__copy-btn--copied': copied }"
@@ -563,7 +615,11 @@ onUnmounted(() => {
         <div class="response-text markdown-body" v-html="renderedResponse" />
         <span v-if="chat.sending" class="enhance__cursor" />
       </div>
-      <PlatformActionBar v-if="hasResponse" :enhanced-prompt="enhancedPrompt" @clear="clearEnhancement" />
+      <PlatformActionBar
+        v-if="hasResponse"
+        :enhanced-prompt="enhancedPrompt"
+        @clear="clearEnhancement"
+      />
     </div>
   </div>
 </template>
@@ -583,7 +639,10 @@ onUnmounted(() => {
   border: 1px solid var(--color-border);
   border-radius: 1.25rem;
   padding: 0.875rem 1rem 0.5rem;
-  transition: border-color 0.2s, box-shadow 0.2s, flex 0.4s ease;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    flex 0.4s ease;
 }
 
 .enhance__input-area:focus-within {
@@ -641,7 +700,9 @@ onUnmounted(() => {
   background: transparent;
   color: var(--wl-warm-gray);
   cursor: pointer;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
 }
 
 .enhance__tool-btn:hover {
@@ -661,7 +722,9 @@ onUnmounted(() => {
   background: var(--wl-navy);
   color: var(--wl-cream);
   cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
 }
 
 .enhance__send:hover:not(:disabled) {
@@ -750,7 +813,9 @@ onUnmounted(() => {
   line-height: 1;
   cursor: pointer;
   border-radius: 50%;
-  transition: color 0.2s, background 0.2s;
+  transition:
+    color 0.2s,
+    background 0.2s;
 }
 
 .enhance__file-remove:hover {
@@ -834,7 +899,9 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .thinking-block__text {
@@ -902,7 +969,10 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: var(--color-text);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
 }
 
 .enhance__clear-btn:hover {
@@ -919,7 +989,10 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: var(--color-text);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
 }
 
 .enhance__copy-btn:hover {
@@ -956,9 +1029,15 @@ onUnmounted(() => {
   line-height: 1.3;
 }
 
-.markdown-body :deep(h1) { font-size: 1.5rem; }
-.markdown-body :deep(h2) { font-size: 1.25rem; }
-.markdown-body :deep(h3) { font-size: 1.1rem; }
+.markdown-body :deep(h1) {
+  font-size: 1.5rem;
+}
+.markdown-body :deep(h2) {
+  font-size: 1.25rem;
+}
+.markdown-body :deep(h3) {
+  font-size: 1.1rem;
+}
 
 .markdown-body :deep(p) {
   margin: 0.5em 0;
@@ -1062,8 +1141,15 @@ onUnmounted(() => {
 }
 
 @keyframes pulse-rec {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
 
 .enhance__view-label {
@@ -1084,7 +1170,12 @@ onUnmounted(() => {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 </style>
