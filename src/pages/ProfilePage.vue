@@ -6,6 +6,7 @@ import { ApiError } from '@/api/client'
 import BaseButton from '@/components/BaseButton.vue'
 import BaseCard from '@/components/BaseCard.vue'
 import BaseModal from '@/components/BaseModal.vue'
+import { BILLING_PORTAL_LOGIN_URL } from '@/config/billing'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -141,6 +142,22 @@ function providerLabel(provider: string) {
         <div class="form-group">
           <label class="form-label">Sign-in Method</label>
           <p class="form-value">{{ providerLabel(auth.user?.oauth_provider ?? '') }}</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Plan</label>
+          <p class="form-value">
+            {{ auth.user?.plan === 'pro' ? 'Pro' : 'Free' }}
+            <a
+              v-if="auth.user?.plan === 'pro'"
+              :href="BILLING_PORTAL_LOGIN_URL"
+              target="_blank"
+              rel="noopener"
+              class="plan-link"
+              >Manage billing</a
+            >
+            <RouterLink v-else to="/pricing" class="plan-link">Upgrade</RouterLink>
+          </p>
         </div>
 
         <div class="form-group">
@@ -312,6 +329,13 @@ function providerLabel(provider: string) {
 .form-value {
   font-size: 0.875rem;
   color: var(--color-text);
+}
+
+.plan-link {
+  margin-left: 0.75rem;
+  color: var(--color-heading);
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .form-error {

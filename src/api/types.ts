@@ -4,6 +4,7 @@ export interface UserInfo {
   name: string
   oauth_provider: string
   created_at: string
+  plan: string
 }
 
 export interface KeyInfo {
