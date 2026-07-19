@@ -31,11 +31,7 @@ function formatDate(iso: string) {
       </span>
     </td>
     <td>
-      <BaseButton
-        v-if="keyInfo.is_active"
-        variant="danger"
-        @click="$emit('revoke', keyInfo.id)"
-      >
+      <BaseButton v-if="keyInfo.is_active" variant="danger" @click="$emit('revoke', keyInfo.id)">
         Revoke
       </BaseButton>
     </td>

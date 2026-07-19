@@ -41,9 +41,7 @@ const { platforms, copiedPlatformId, copyToClipboard } = usePlatformLinks(prompt
       </template>
     </div>
     <div class="platform-bar__actions">
-      <button class="platform-bar__clear-btn" @click="emit('clear')">
-        Clear
-      </button>
+      <button class="platform-bar__clear-btn" @click="emit('clear')">Clear</button>
       <button
         class="platform-bar__copy-btn"
         :class="{ 'platform-bar__copy-btn--copied': copiedPlatformId === '_copy' }"
@@ -90,7 +88,10 @@ const { platforms, copiedPlatformId, copyToClipboard } = usePlatformLinks(prompt
   color: var(--color-text);
   cursor: pointer;
   text-decoration: none;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
 }
 
 .platform-bar__btn:hover {
@@ -125,7 +126,10 @@ const { platforms, copiedPlatformId, copyToClipboard } = usePlatformLinks(prompt
   font-size: 0.75rem;
   color: var(--color-text);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
 }
 
 .platform-bar__clear-btn:hover {
@@ -142,7 +146,10 @@ const { platforms, copiedPlatformId, copyToClipboard } = usePlatformLinks(prompt
   font-size: 0.75rem;
   color: var(--color-text);
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
 }
 
 .platform-bar__copy-btn:hover {

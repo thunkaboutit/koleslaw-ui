@@ -54,9 +54,7 @@ async function copyKey() {
 
     <!-- Newly created key banner -->
     <div v-if="keys.newlyCreatedKey" class="new-key-banner">
-      <p class="new-key-banner__label">
-        Your new API key. Copy it now — you won't see it again.
-      </p>
+      <p class="new-key-banner__label">Your new API key. Copy it now — you won't see it again.</p>
       <div class="new-key-banner__row">
         <code class="new-key-banner__key">{{ keys.newlyCreatedKey.key }}</code>
         <BaseButton variant="secondary" @click="copyKey">
@@ -126,7 +124,10 @@ async function copyKey() {
       <template #header>
         <h3>Revoke API Key</h3>
       </template>
-      <p>Are you sure you want to revoke this key? This action cannot be undone. Any applications using this key will stop working.</p>
+      <p>
+        Are you sure you want to revoke this key? This action cannot be undone. Any applications
+        using this key will stop working.
+      </p>
       <template #footer>
         <BaseButton variant="secondary" @click="revokeTarget = null">Cancel</BaseButton>
         <BaseButton variant="danger" @click="confirmRevoke">Revoke</BaseButton>

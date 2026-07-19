@@ -106,7 +106,11 @@ function retry() {
         />
 
         <!-- Typing indicator -->
-        <div v-if="chat.sending && !chat.streamingContent" class="chat-typing" aria-label="Assistant is thinking">
+        <div
+          v-if="chat.sending && !chat.streamingContent"
+          class="chat-typing"
+          aria-label="Assistant is thinking"
+        >
           <span class="chat-typing__dot" />
           <span class="chat-typing__dot" />
           <span class="chat-typing__dot" />
@@ -165,7 +169,9 @@ function retry() {
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
   box-shadow: 0 4px 12px rgba(26, 39, 68, 0.25);
 }
 
@@ -226,7 +232,9 @@ function retry() {
   font-weight: 600;
   color: var(--wl-warm-gray);
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .chat-header__clear:hover {
@@ -275,13 +283,27 @@ function retry() {
   animation: typing-bounce 1.4s infinite ease-in-out both;
 }
 
-.chat-typing__dot:nth-child(1) { animation-delay: -0.32s; }
-.chat-typing__dot:nth-child(2) { animation-delay: -0.16s; }
-.chat-typing__dot:nth-child(3) { animation-delay: 0s; }
+.chat-typing__dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.chat-typing__dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+.chat-typing__dot:nth-child(3) {
+  animation-delay: 0s;
+}
 
 @keyframes typing-bounce {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-  40% { transform: scale(1); opacity: 1; }
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Error */

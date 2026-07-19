@@ -9,16 +9,18 @@ import BorderFrame from '@/components/BorderFrame.vue'
 const route = useRoute()
 const viewKey = ref(0)
 
-provide('forceRemount', () => { viewKey.value++ })
+provide('forceRemount', () => {
+  viewKey.value++
+})
 </script>
 
 <template>
   <BorderFrame>
-<!--    <main>-->
-      <AppNavbar v-if="route.name !== 'login' && route.name !== 'signup'" />
-      <RouterView :key="viewKey" />
-      <AppFooter v-if="route.name !== 'login' && route.name !== 'signup'" />
-<!--    </main>-->
+    <!--    <main>-->
+    <AppNavbar v-if="route.name !== 'login' && route.name !== 'signup'" />
+    <RouterView :key="viewKey" />
+    <AppFooter v-if="route.name !== 'login' && route.name !== 'signup'" />
+    <!--    </main>-->
   </BorderFrame>
   <!-- <ChatPanel v-if="route.name !== 'login'" /> -->
 </template>

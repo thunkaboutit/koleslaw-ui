@@ -1,10 +1,10 @@
 # Koleslaw — Terms of Service
 
-**Effective date:** 4/2/2026 
+**Effective date:** 4/2/2026
 **Last updated:** March 31, 2026
 
 These Terms of Service ("Terms") govern your access to and use of the Koleslaw prompt enhancement service, including the
-website and chat interface at [https://koleslaw.ai](https://koleslaw.ai) (the "Site"), the Koleslaw Chrome extension 
+website and chat interface at [https://koleslaw.ai](https://koleslaw.ai) (the "Site"), the Koleslaw Chrome extension
 (the "Extension"), the Koleslaw API at `api.koleslaw.ai` (the "API"), and any related tools, documentation, or
 interfaces (collectively, the "Service"). The Service is operated by **Thunk About It** ("Koleslaw," "we," "
 us," or "our").
@@ -73,7 +73,7 @@ Service to:
 
 - Submit, process, or generate content that is unlawful, harmful, threatening, abusive, harassing, defamatory, obscene,
   or otherwise objectionable.
-- Submit protected health information (PHI) as defined by the Health Insurance Portability and Accountability Act 
+- Submit protected health information (PHI) as defined by the Health Insurance Portability and Accountability Act
   (HIPAA). The Service is not HIPAA-compliant, and we do not enter into Business Associate Agreements.
 - Submit content that infringes or misappropriates any third party's intellectual property rights, privacy rights, or
   other legal rights.

@@ -13,7 +13,10 @@ const submitError = ref('')
 const schema = object({
   name: string().required('Name is required').trim(),
   email: string().required('Email is required').email('Please enter a valid email address').trim(),
-  message: string().required('Message is required').trim().min(10, 'Message must be at least 10 characters'),
+  message: string()
+    .required('Message is required')
+    .trim()
+    .min(10, 'Message must be at least 10 characters'),
 })
 
 const { handleSubmit, isSubmitting, resetForm } = useForm({ validationSchema: schema })
@@ -45,7 +48,8 @@ const onSubmit = handleSubmit(async (values) => {
       submitted.value = true
       resetForm()
     } else {
-      submitError.value = data.message || 'Something went wrong with your submission. Please try again.'
+      submitError.value =
+        data.message || 'Something went wrong with your submission. Please try again.'
     }
   } catch {
     submitError.value = 'Unable to send your message. Please check your connection and try again.'
@@ -61,8 +65,21 @@ function sendAnother() {
   <div v-if="submitted" class="success">
     <div class="success__icon" aria-hidden="true">
       <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-        <circle cx="24" cy="24" r="22" stroke="var(--color-success)" stroke-width="2.5" fill="var(--color-success-bg)" />
-        <path d="M15 24l6 6 12-12" stroke="var(--color-success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        <circle
+          cx="24"
+          cy="24"
+          r="22"
+          stroke="var(--color-success)"
+          stroke-width="2.5"
+          fill="var(--color-success-bg)"
+        />
+        <path
+          d="M15 24l6 6 12-12"
+          stroke="var(--color-success)"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
     </div>
     <h2 class="success__title">Message sent!</h2>
