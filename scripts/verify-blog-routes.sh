@@ -137,7 +137,18 @@ expect_contains "<link rel=\"canonical\" href=\"https://koleslaw.ai/blog/${SLUG}
 expect_contains "<meta property=\"og:url\" content=\"https://koleslaw.ai/blog/${SLUG}\">"
 expect_contains '<meta property="og:type" content="article">'
 expect_contains '<meta property="article:published_time" content="2026-01-02">'
+expect_contains '<meta property="og:image" content="https://koleslaw.ai/og/default.png">'
+expect_contains '<meta name="twitter:card" content="summary_large_image">'
 expect_missing "<title>${SHELL_TITLE}</title>"
+
+echo "==> the card art the tags point at is really there"
+fetch '/og/default.png'
+expect_status 200
+if [ -s "$BODY" ] && [ "$(head -c 4 "$BODY" | tail -c 3)" = 'PNG' ]; then
+  ok 'serves a PNG'
+else
+  bad 'og/default.png is missing or is not a PNG'
+fi
 
 # --- scenario: the blog index has its own metadata too ------------------------
 

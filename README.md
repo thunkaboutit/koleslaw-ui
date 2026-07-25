@@ -42,6 +42,18 @@ those files directly
 via the `$uri.html` clause in `nginx.conf.template`, which also keeps canonical
 URLs free of trailing slashes.
 
+The social card is `public/og/default.png`, rendered from `scripts/og-card.html`
+so it reuses the site's own palette, fonts, grain, and mascot rather than a
+hand-copied approximation:
+
+```sh
+./scripts/render-og-card.sh     # edit the HTML, re-run, commit both files
+```
+
+Posts can override it per post with an `ogImage:` frontmatter field. Any card is
+only referenced if the file is actually present in the build output, so the tags
+never point at a 404.
+
 That routing is load-bearing and easy to break, so it has its own check against a
 real container:
 
