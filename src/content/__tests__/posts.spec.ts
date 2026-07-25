@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { allPosts, buildPosts, seriesNavIn } from '../posts'
+import { allPosts, buildPosts, chronologicalNavIn, seriesNavIn } from '../posts'
 
 function post(slug: string, date: string, extra: string[] = []): [string, string] {
   return [
@@ -91,6 +91,73 @@ describe('seriesNavIn', () => {
     const a1 = mixed.find((entry) => entry.slug === 'a1')
 
     expect(a1 && seriesNavIn(mixed, a1)?.parts).toHaveLength(1)
+  })
+})
+
+describe('chronologicalNavIn', () => {
+  const posts = buildPosts(
+    Object.fromEntries([
+      post('oldest', '2026-08-01'),
+      post('middle', '2026-08-08'),
+      post('newest', '2026-08-15'),
+    ]),
+  )
+
+  function find(slug: string, collection = posts) {
+    const match = collection.find((entry) => entry.slug === slug)
+    if (!match) throw new Error(`fixture missing: ${slug}`)
+    return match
+  }
+
+  it('offers the older post as previous and the newer as next', () => {
+    const nav = chronologicalNavIn(posts, find('middle'))
+
+    expect(nav?.previous?.slug).toBe('oldest')
+    expect(nav?.next?.slug).toBe('newest')
+  })
+
+  it('leaves the newest post without a next', () => {
+    const nav = chronologicalNavIn(posts, find('newest'))
+
+    expect(nav?.next).toBeUndefined()
+    expect(nav?.previous?.slug).toBe('middle')
+  })
+
+  it('leaves the oldest post without a previous', () => {
+    const nav = chronologicalNavIn(posts, find('oldest'))
+
+    expect(nav?.previous).toBeUndefined()
+    expect(nav?.next?.slug).toBe('middle')
+  })
+
+  it('steps over drafts', () => {
+    const withDraft = buildPosts(
+      Object.fromEntries([
+        post('published-older', '2026-08-01'),
+        post('unfinished', '2026-08-08', ['draft: true']),
+        post('published-newer', '2026-08-15'),
+      ]),
+    )
+    const nav = chronologicalNavIn(withDraft, find('published-newer', withDraft))
+
+    expect(nav?.previous?.slug).toBe('published-older')
+  })
+
+  it('returns null for a draft, which has no place in the chronology yet', () => {
+    const withDraft = buildPosts(
+      Object.fromEntries([
+        post('published', '2026-08-01'),
+        post('unfinished', '2026-08-08', ['draft: true']),
+      ]),
+    )
+
+    expect(chronologicalNavIn(withDraft, find('unfinished', withDraft))).toBeNull()
+  })
+
+  it('returns null when there is nowhere to go', () => {
+    const only = buildPosts(Object.fromEntries([post('lonely', '2026-08-01')]))
+
+    expect(chronologicalNavIn(only, find('lonely', only))).toBeNull()
   })
 })
 

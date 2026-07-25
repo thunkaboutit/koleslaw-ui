@@ -3,7 +3,7 @@ import { computed, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useMarkdown } from '@/composables/useMarkdown'
 import { useSeo } from '@/composables/useSeo'
-import { findPost, formatPostDate, seriesNav } from '@/content/posts'
+import { chronologicalNav, findPost, formatPostDate, seriesNav } from '@/content/posts'
 import { BLOG_TITLE, SITE_URL, postUrl } from '@/config/site'
 
 const route = useRoute()
@@ -13,6 +13,9 @@ const slug = computed(() => String(route.params['slug'] ?? ''))
 const post = computed(() => findPost(slug.value))
 const rendered = computed(() => (post.value ? renderMarkdown(post.value.body) : ''))
 const series = computed(() => (post.value ? seriesNav(post.value) : null))
+// Only consulted when the series nav has nothing to show, so a standalone post
+// still offers somewhere to go rather than dead-ending.
+const chronological = computed(() => (post.value ? chronologicalNav(post.value) : null))
 
 useSeo(() => {
   const current = post.value
@@ -79,6 +82,27 @@ watch(slug, () => window.scrollTo({ top: 0 }))
         >
           <span class="post-page__series-label">Next</span>
           {{ series.next.title }}
+        </RouterLink>
+      </nav>
+
+      <nav v-else-if="chronological" class="post-page__series-nav">
+        <RouterLink
+          v-if="chronological.previous"
+          class="post-page__series-link"
+          :to="`/blog/${chronological.previous.slug}`"
+        >
+          <span class="post-page__series-label">Older</span>
+          {{ chronological.previous.title }}
+        </RouterLink>
+        <span v-else />
+
+        <RouterLink
+          v-if="chronological.next"
+          class="post-page__series-link post-page__series-link--next"
+          :to="`/blog/${chronological.next.slug}`"
+        >
+          <span class="post-page__series-label">Newer</span>
+          {{ chronological.next.title }}
         </RouterLink>
       </nav>
     </template>

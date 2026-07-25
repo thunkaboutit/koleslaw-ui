@@ -7,6 +7,13 @@ export interface BlogPost extends PostFrontmatter {
   body: string
 }
 
+export interface ChronologicalNav {
+  /** The next post older than this one. */
+  previous: BlogPost | undefined
+  /** The next post newer than this one. */
+  next: BlogPost | undefined
+}
+
 export interface SeriesNav {
   name: string
   parts: BlogPost[]
@@ -63,6 +70,27 @@ export function seriesNavIn(posts: BlogPost[], post: BlogPost): SeriesNav | null
 }
 
 /**
+ * Neighbours by date, for a post that belongs to no series.
+ *
+ * Drafts are stepped over so a dev preview navigates the way production will.
+ * A draft itself gets no navigation: it has no place in the chronology until it
+ * publishes. Null also covers the single-post case, where there is nowhere to
+ * go and a nav bar would be furniture.
+ */
+export function chronologicalNavIn(posts: BlogPost[], post: BlogPost): ChronologicalNav | null {
+  const published = posts.filter((candidate) => !candidate.draft)
+  const index = published.findIndex((candidate) => candidate.slug === post.slug)
+  if (index === -1) return null
+
+  // The collection is newest first, so the entry above is newer, below is older.
+  const previous = published[index + 1]
+  const next = published[index - 1]
+  if (previous === undefined && next === undefined) return null
+
+  return { previous, next }
+}
+
+/**
  * Drafts render on `pnpm dev` so posts can be reviewed in place, and are
  * dropped from production builds. They are still present in the shipped JS
  * bundle, so treat "draft" as unlisted, not secret.
@@ -77,6 +105,10 @@ export function findPost(slug: string): BlogPost | undefined {
 
 export function seriesNav(post: BlogPost): SeriesNav | null {
   return seriesNavIn(allPosts, post)
+}
+
+export function chronologicalNav(post: BlogPost): ChronologicalNav | null {
+  return chronologicalNavIn(allPosts, post)
 }
 
 /** "1 August 2026" — pinned to UTC so the date never drifts by timezone. */
