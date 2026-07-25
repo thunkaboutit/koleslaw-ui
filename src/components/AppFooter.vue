@@ -17,6 +17,7 @@ withDefaults(
   <footer class="footer">
     <div class="footer__inner">
       <div class="footer__links">
+        <RouterLink to="/blog" class="footer__link">Blog</RouterLink>
         <RouterLink to="/terms" class="footer__link">Terms of Service</RouterLink>
         <RouterLink to="/privacy" class="footer__link">Privacy Policy</RouterLink>
         <RouterLink to="/contact" class="footer__link">Contact Us</RouterLink>

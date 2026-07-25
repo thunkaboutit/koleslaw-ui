@@ -67,6 +67,7 @@ async function signOut() {
           <RouterLink to="/pricing" class="navbar__link" @click="handleNav('/pricing')"
             >Pricing</RouterLink
           >
+          <RouterLink to="/blog" class="navbar__link" @click="handleNav('/blog')">Blog</RouterLink>
         </div>
       </div>
       <div class="navbar__right">
@@ -94,6 +95,9 @@ async function signOut() {
     <div v-if="menuOpen" class="navbar__mobile-menu">
       <RouterLink to="/pricing" class="navbar__mobile-link" @click="handleNav('/pricing')"
         >Pricing</RouterLink
+      >
+      <RouterLink to="/blog" class="navbar__mobile-link" @click="handleNav('/blog')"
+        >Blog</RouterLink
       >
       <template v-if="auth.user">
         <RouterLink
