@@ -24,6 +24,40 @@ pnpm type-check   # vue-tsc
 
 A Husky pre-commit hook runs `lint`, `type-check`, and `build-only` before each commit.
 
+## Blog
+
+Posts are markdown files in `src/content/blog/`. The filename is the slug, so
+`src/content/blog/my-post.md` serves at `/blog/my-post`. Frontmatter is parsed by
+`src/content/frontmatter.ts`, which throws on malformed input so a bad post fails
+the build instead of shipping. `draft: true` keeps a post off the index and out of
+production builds, but it still ships inside the JS bundle: draft means unlisted,
+not secret.
+
+Because the portal is a client-rendered SPA and link unfurlers do not run
+JavaScript, `plugins/blog-static.ts` runs inside `vite build` and writes
+`dist/blog/<slug>.html` per post with its own title, canonical link, and Open
+Graph tags, plus `rss.xml` and `sitemap.xml`. nginx serves those files directly
+via the `$uri.html` clause in `nginx.conf.template`, which also keeps canonical
+URLs free of trailing slashes.
+
+That routing is load-bearing and easy to break, so it has its own check against a
+real container:
+
+```sh
+./scripts/verify-blog-routes.sh
+```
+
+It builds the image, boots it, and asserts that a post URL returns its own
+metadata with no redirect, that unknown and draft slugs fall through to the SPA,
+that the existing routes and hashed assets are unaffected, and that the feeds
+serve. It writes a temporary fixture post and removes it on exit. To watch the
+assertions fail for the right reason, point it at a config without the
+`$uri.html` clause:
+
+```sh
+NGINX_TEMPLATE=/path/to/legacy.conf.template ./scripts/verify-blog-routes.sh
+```
+
 ## Key Components
 
 | Component | Description |
