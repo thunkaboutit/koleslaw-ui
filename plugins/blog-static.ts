@@ -5,11 +5,11 @@ import {
   BLOG_DESCRIPTION,
   BLOG_TITLE,
   DEFAULT_OG_IMAGE,
-  SITE_NAME,
   SITE_URL,
   postUrl,
 } from '../src/config/site'
-import { parsePost, type PostFrontmatter } from '../src/content/frontmatter'
+import { parsePost } from '../src/content/frontmatter'
+import { buildPage, publishedPosts, renderRss, renderSitemap, type BlogPost } from './blog-render'
 
 /**
  * Bakes per-post static HTML, an RSS feed, and a sitemap into the build output.
@@ -22,30 +22,16 @@ import { parsePost, type PostFrontmatter } from '../src/content/frontmatter'
  * This writes dist/blog/<slug>.html — the SPA shell with that post's title,
  * description, canonical and Open Graph tags substituted in. nginx serves the
  * real file (see the $uri.html clause in nginx.conf.template), the SPA boots
- * as usual, and the user sees no difference.
+ * as usual, and the user sees no difference. Routing is covered by
+ * scripts/verify-blog-routes.sh; the rendering itself lives in blog-render.ts
+ * and is covered by its unit tests.
  *
  * Body content is deliberately NOT prerendered. Correct meta tags fix
  * unfurling outright, and Google renders JS for the article text. If organic
  * search ever justifies it, full prerendering via vite-ssg is the next step.
  */
 
-interface BlogPost extends PostFrontmatter {
-  slug: string
-}
-
 const CONTENT_DIR = 'src/content/blog'
-
-/** Public routes worth listing in the sitemap. Authed app routes stay out. */
-const STATIC_ROUTES = ['/', '/blog', '/pricing', '/contact', '/terms', '/privacy']
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
 
 function loadPosts(root: string): BlogPost[] {
   const dir = resolve(root, CONTENT_DIR)
@@ -58,65 +44,6 @@ function loadPosts(root: string): BlogPost[] {
       const { frontmatter } = parsePost(readFileSync(path, 'utf8'), `${CONTENT_DIR}/${name}`)
       return { ...frontmatter, slug: name.replace(/\.md$/, '') }
     })
-    .filter((post) => !post.draft)
-    .sort((a, b) => b.date.localeCompare(a.date))
-}
-
-interface PageMeta {
-  title: string
-  description: string
-  canonical: string
-  /** Absolute image URL, or undefined when no card art exists on disk. */
-  image: string | undefined
-  type: string
-  publishedTime?: string
-}
-
-function renderHead(meta: PageMeta): string {
-  const tags = [
-    ['name', 'description', meta.description],
-    ['property', 'og:site_name', SITE_NAME],
-    ['property', 'og:title', meta.title],
-    ['property', 'og:description', meta.description],
-    ['property', 'og:url', meta.canonical],
-    ['property', 'og:type', meta.type],
-    // A card pointing at a missing image unfurls worse than no card at all,
-    // so the image tags only appear once the art is actually in the build.
-    ['name', 'twitter:card', meta.image === undefined ? 'summary' : 'summary_large_image'],
-    ['name', 'twitter:title', meta.title],
-    ['name', 'twitter:description', meta.description],
-  ]
-
-  if (meta.image !== undefined) {
-    tags.push(['property', 'og:image', meta.image], ['name', 'twitter:image', meta.image])
-  }
-
-  if (meta.publishedTime !== undefined) {
-    tags.push(['property', 'article:published_time', meta.publishedTime])
-  }
-
-  const rendered = tags
-    .map(([attr, key, content]) => {
-      return `    <meta ${attr}="${key}" content="${escapeHtml(content ?? '')}">`
-    })
-    .join('\n')
-
-  return [
-    `    <link rel="canonical" href="${escapeHtml(meta.canonical)}">`,
-    rendered,
-    `    <link rel="alternate" type="application/rss+xml" title="${escapeHtml(
-      BLOG_TITLE,
-    )}" href="${SITE_URL}/rss.xml">`,
-  ].join('\n')
-}
-
-function buildPage(shell: string, meta: PageMeta): string {
-  const withTitle = shell.replace(
-    /<title>[\s\S]*?<\/title>/,
-    `<title>${escapeHtml(meta.title)}</title>`,
-  )
-  // Swallow the closing tag's own indentation so the injected block lines up.
-  return withTitle.replace(/[ \t]*<\/head>/, `${renderHead(meta)}\n  </head>`)
 }
 
 /**
@@ -128,56 +55,6 @@ function resolveImage(outDir: string, image: string | undefined): string | undef
   const path = image ?? DEFAULT_OG_IMAGE
   if (path.startsWith('http')) return path
   return existsSync(join(outDir, path)) ? `${SITE_URL}${path}` : undefined
-}
-
-function renderRss(posts: BlogPost[]): string {
-  const items = posts
-    .map((post) => {
-      const link = postUrl(post.slug)
-      const pubDate = new Date(`${post.date}T00:00:00Z`).toUTCString()
-      return [
-        '    <item>',
-        `      <title>${escapeHtml(post.title)}</title>`,
-        `      <link>${link}</link>`,
-        `      <guid isPermaLink="true">${link}</guid>`,
-        `      <pubDate>${pubDate}</pubDate>`,
-        `      <description>${escapeHtml(post.description)}</description>`,
-        '    </item>',
-      ].join('\n')
-    })
-    .join('\n')
-
-  return [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
-    '  <channel>',
-    `    <title>${escapeHtml(BLOG_TITLE)}</title>`,
-    `    <link>${SITE_URL}/blog</link>`,
-    `    <description>${escapeHtml(BLOG_DESCRIPTION)}</description>`,
-    '    <language>en</language>',
-    `    <atom:link href="${SITE_URL}/rss.xml" rel="self" type="application/rss+xml"/>`,
-    ...(items === '' ? [] : [items]),
-    '  </channel>',
-    '</rss>',
-    '',
-  ].join('\n')
-}
-
-function renderSitemap(posts: BlogPost[]): string {
-  const urls = [
-    ...STATIC_ROUTES.map((route) => `  <url><loc>${SITE_URL}${route}</loc></url>`),
-    ...posts.map((post) => {
-      return `  <url><loc>${postUrl(post.slug)}</loc><lastmod>${post.date}</lastmod></url>`
-    }),
-  ].join('\n')
-
-  return [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    urls,
-    '</urlset>',
-    '',
-  ].join('\n')
 }
 
 function write(outDir: string, relativePath: string, contents: string): void {
@@ -211,7 +88,7 @@ export function blogStatic(): Plugin {
       const shell = readFileSync(shellPath, 'utf8')
       // A malformed post throws here and fails the build on purpose. Shipping a
       // post with no title is worse than not shipping.
-      const posts = loadPosts(config.root)
+      const posts = publishedPosts(loadPosts(config.root))
 
       write(
         outDir,
