@@ -9,7 +9,14 @@ import {
   postUrl,
 } from '../src/config/site'
 import { parsePost } from '../src/content/frontmatter'
-import { buildPage, publishedPosts, renderRss, renderSitemap, type BlogPost } from './blog-render'
+import {
+  buildPage,
+  publishedPosts,
+  renderRobots,
+  renderRss,
+  renderSitemap,
+  type BlogPost,
+} from './blog-render'
 
 /**
  * Bakes per-post static HTML, an RSS feed, and a sitemap into the build output.
@@ -119,9 +126,12 @@ export function blogStatic(): Plugin {
 
       write(outDir, 'rss.xml', renderRss(posts))
       write(outDir, 'sitemap.xml', renderSitemap(posts))
+      write(outDir, 'robots.txt', renderRobots())
 
       config.logger.info(
-        `  blog: ${posts.length} post${posts.length === 1 ? '' : 's'}, rss.xml, sitemap.xml`,
+        `  blog: ${posts.length} post${
+          posts.length === 1 ? '' : 's'
+        }, rss.xml, sitemap.xml, robots.txt`,
       )
     },
   }

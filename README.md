@@ -36,7 +36,9 @@ not secret.
 Because the portal is a client-rendered SPA and link unfurlers do not run
 JavaScript, `plugins/blog-static.ts` runs inside `vite build` and writes
 `dist/blog/<slug>.html` per post with its own title, canonical link, and Open
-Graph tags, plus `rss.xml` and `sitemap.xml`. nginx serves those files directly
+Graph tags, plus `rss.xml`, `sitemap.xml`, and `robots.txt` (emitted from the
+same place as the sitemap so its URL has one source of truth). nginx serves
+those files directly
 via the `$uri.html` clause in `nginx.conf.template`, which also keeps canonical
 URLs free of trailing slashes.
 

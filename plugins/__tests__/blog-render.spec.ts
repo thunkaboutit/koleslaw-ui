@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   buildPage,
   publishedPosts,
+  renderRobots,
   renderRss,
   renderSitemap,
+  STATIC_ROUTES,
   type BlogPost,
   type PageMeta,
 } from '../blog-render'
@@ -207,6 +209,40 @@ describe('renderRss', () => {
     const xml = renderRss([post({ title: 'Tags & <angles>' })])
 
     expect(parseXml(xml).querySelector('item > title')?.textContent).toBe('Tags & <angles>')
+  })
+})
+
+describe('renderRobots', () => {
+  it('points crawlers at the sitemap', () => {
+    const robots = renderRobots()
+
+    expect(robots).toContain('User-agent: *')
+    expect(robots).toContain('Sitemap: https://koleslaw.ai/sitemap.xml')
+  })
+
+  it('leaves the blog crawlable', () => {
+    const robots = renderRobots()
+
+    expect(robots).not.toContain('Disallow: /blog')
+    expect(robots).not.toMatch(/^Disallow: \/$/m)
+  })
+
+  it('keeps crawlers out of the authed app routes', () => {
+    const robots = renderRobots()
+
+    for (const route of ['/chat', '/dashboard', '/keys', '/login', '/profile', '/signup']) {
+      expect(robots).toContain(`Disallow: ${route}`)
+    }
+  })
+
+  it('agrees with the sitemap about what is public', () => {
+    const robots = renderRobots()
+    const sitemap = renderSitemap([])
+
+    for (const route of STATIC_ROUTES) {
+      expect(sitemap).toContain(`<loc>https://koleslaw.ai${route}</loc>`)
+      expect(robots).not.toContain(`Disallow: ${route}\n`)
+    }
   })
 })
 

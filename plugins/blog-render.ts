@@ -3,7 +3,7 @@ import type { PostFrontmatter } from '../src/content/frontmatter'
 
 /**
  * Pure rendering for the blog's build-time artefacts: per-post HTML, the RSS
- * feed, and the sitemap.
+ * feed, the sitemap, and robots.txt.
  *
  * Split out of blog-static.ts, which owns everything that touches the disk, so
  * these transforms can be tested directly instead of through a full
@@ -27,6 +27,13 @@ export interface PageMeta {
 
 /** Public routes worth listing in the sitemap. Authed app routes stay out. */
 export const STATIC_ROUTES = ['/', '/blog', '/pricing', '/contact', '/terms', '/privacy']
+
+/**
+ * Routes behind auth. They serve the same SPA shell as everything else, so to a
+ * crawler they are half a dozen copies of one page. Keeping them out of the
+ * index is housekeeping, not security: the auth check is the security.
+ */
+export const DISALLOWED_ROUTES = ['/chat', '/dashboard', '/keys', '/login', '/profile', '/signup']
 
 export function escapeHtml(value: string): string {
   return value
@@ -124,6 +131,21 @@ export function renderRss(posts: BlogPost[]): string {
     ...(items === '' ? [] : [items]),
     '  </channel>',
     '</rss>',
+    '',
+  ].join('\n')
+}
+
+/**
+ * Emitted next to sitemap.xml rather than kept in public/, so the sitemap URL
+ * has exactly one source of truth and cannot drift from what is generated.
+ */
+export function renderRobots(): string {
+  return [
+    'User-agent: *',
+    'Allow: /',
+    ...DISALLOWED_ROUTES.map((route) => `Disallow: ${route}`),
+    '',
+    `Sitemap: ${SITE_URL}/sitemap.xml`,
     '',
   ].join('\n')
 }

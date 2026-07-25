@@ -197,7 +197,14 @@ fetch '/sitemap.xml'
 expect_status 200
 expect_contains "<loc>https://koleslaw.ai/blog/${SLUG}</loc>"
 expect_contains '<loc>https://koleslaw.ai/blog</loc>'
-expect_missing '/keys'
+expect_missing '<loc>https://koleslaw.ai/keys</loc>'
+
+echo "==> robots.txt is served and names the sitemap"
+fetch '/robots.txt'
+expect_status 200
+expect_contains 'Sitemap: https://koleslaw.ai/sitemap.xml'
+expect_contains 'Disallow: /keys'
+expect_missing 'Disallow: /blog'
 
 # --- result -------------------------------------------------------------------
 
