@@ -9,7 +9,6 @@ Vue 3 frontend for [koleslaw.ai](https://koleslaw.ai) — an AI-powered prompt e
 - **File attachments** — images show thumbnail previews; text/PDF files show as chips with filename and size (up to 5 files, 10 MB each)
 - **Voice input** via Web Speech API
 - **Copy to clipboard** (raw markdown, not rendered HTML)
-- **Free-tier usage tracking** (10 prompts per session via localStorage)
 - **GitHub OAuth** login with protected dashboard and API key management pages
 
 ## Setup
