@@ -1,5 +1,5 @@
 ---
-title: The quantization that didn't fit
+title: My "4-bit" quant was 6.2 bits per weight
 description: Nemotron's hidden dimension is 2688, which is not divisible by 256. That one fact quietly inflated a 4-bit quant by a third and cost a weekend.
 date: 2026-08-01
 series: Cutting a 30B model's hosting bill
@@ -8,11 +8,12 @@ tags: [ quantization, gguf, llama.cpp, gpu, koleslaw ]
 draft: true
 ---
 
-> Working draft. Prose is a full candidate for review. Open before
-> publish: cp call on the HN submission title: this post title, or "A
-> '4-bit' quant that came out at 6.2 bits per weight". (Eval-harness
-> link is LIVE: the companion repo flipped public 2026-07-28,
-> anon-verified.) Remove this note.
+> Working draft. Prose is a full candidate for review. Title DECIDED
+> (cp 2026-07-29): "My "4-bit" quant was 6.2 bits per weight" doubles
+> as the HN title (supersedes "The quantization that didn't fit",
+> which the slug keeps per outline §2.7). (Eval-harness link is LIVE:
+> the companion repo flipped public 2026-07-28, anon-verified.)
+> Remove this note.
 
 The GPU bill was $1,360 a month. That bought one graphics card in AWS, serving one model for a pet project you have
 probably never heard of: the 31.6B parameter fine-tune behind [Koleslaw](https://koleslaw.ai), a prompt enhancer that
