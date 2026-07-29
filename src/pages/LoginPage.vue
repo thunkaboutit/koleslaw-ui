@@ -57,7 +57,7 @@ const providers = computed(() => allProviders.filter((p) => enabledProviders.val
       <h1 class="login__title">
         <RouterLink to="/" class="login__title-link">Koleslaw</RouterLink>
       </h1>
-      <p class="login__subtitle">Developer Portal</p>
+      <p class="login__subtitle">koleslaw.ai</p>
 
       <p v-if="error" class="login__error" role="alert">{{ error }}</p>
 
