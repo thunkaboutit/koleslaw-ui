@@ -4,7 +4,7 @@ description: Running a 30B model on spot GPUs cut the bill from $588 to $245 a m
 date: 2026-08-08
 series: Cutting a 30B model's hosting bill
 part: 2
-tags: [ aws, spot, autoscaling, gpu, building-koleslaw ]
+tags: [ aws, spot, autoscaling, gpu, koleslaw ]
 draft: true
 ---
 

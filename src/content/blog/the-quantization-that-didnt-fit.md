@@ -4,7 +4,7 @@ description: Nemotron's hidden dimension is 2688, which is not divisible by 256.
 date: 2026-08-01
 series: Cutting a 30B model's hosting bill
 part: 1
-tags: [ quantization, gguf, llama.cpp, gpu, building-koleslaw ]
+tags: [ quantization, gguf, llama.cpp, gpu, koleslaw ]
 draft: true
 ---
 
