@@ -14,7 +14,7 @@ export interface SeoTags {
   publishedTime?: string
 }
 
-const DEFAULT_TITLE = 'koleslaw.ai — Developer Portal'
+const DEFAULT_TITLE = 'Koleslaw — AI Prompt Enhancement'
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string): void {
   const selector = `meta[${attr}="${key}"]`

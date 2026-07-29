@@ -20,14 +20,14 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT="${PORT:-8088}"
-IMAGE="${IMAGE:-koleslaw-portal-verify:local}"
-CONTAINER="${CONTAINER:-koleslaw-portal-verify}"
+IMAGE="${IMAGE:-koleslaw-ui-verify:local}"
+CONTAINER="${CONTAINER:-koleslaw-ui-verify}"
 BASE="http://127.0.0.1:${PORT}"
 
 SLUG='nginx-route-check'
 DRAFT_SLUG='nginx-route-check-draft'
 TITLE='Route check fixture'
-SHELL_TITLE='koleslaw.ai — Developer Portal'
+SHELL_TITLE='Koleslaw — AI Prompt Enhancement'
 
 FIXTURE="${REPO_ROOT}/src/content/blog/${SLUG}.md"
 DRAFT_FIXTURE="${REPO_ROOT}/src/content/blog/${DRAFT_SLUG}.md"
@@ -123,7 +123,15 @@ else
   docker run -d --name "$CONTAINER" -p "${PORT}:80" "$IMAGE" >/dev/null
 fi
 
-curl -sS --retry 30 --retry-connrefused --retry-delay 1 -o /dev/null "${BASE}/" \
+# Retry on any failure, not just refusals: the docker proxy accepts and then
+# resets connections while nginx is still booting, which --retry-connrefused
+# would treat as fatal.
+reachable=''
+for _ in $(seq 1 30); do
+  if curl -sS -o /dev/null "${BASE}/" 2>/dev/null; then reachable=1; break; fi
+  sleep 1
+done
+[ -n "$reachable" ] \
   || { echo 'container never became reachable' >&2; docker logs "$CONTAINER" >&2; exit 1; }
 
 # --- scenario: a shared post URL returns its own metadata ---------------------

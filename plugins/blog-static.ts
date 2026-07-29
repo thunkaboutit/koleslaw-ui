@@ -21,10 +21,10 @@ import {
 /**
  * Bakes per-post static HTML, an RSS feed, and a sitemap into the build output.
  *
- * The portal is a client-rendered SPA: every route serves the same index.html
+ * The UI is a client-rendered SPA: every route serves the same index.html
  * with one hard-coded <title> and no social tags. Link unfurlers (Reddit,
  * Slack, LinkedIn, X) do not run JavaScript, so without this every shared post
- * would preview as "koleslaw.ai — Developer Portal".
+ * would preview as "Koleslaw — AI Prompt Enhancement".
  *
  * This writes dist/blog/<slug>.html — the SPA shell with that post's title,
  * description, canonical and Open Graph tags substituted in. nginx serves the

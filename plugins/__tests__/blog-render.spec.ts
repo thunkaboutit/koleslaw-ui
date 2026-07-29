@@ -16,7 +16,7 @@ const SHELL = [
   '<html lang="en">',
   '  <head>',
   '    <meta charset="UTF-8">',
-  '    <title>koleslaw.ai — Developer Portal</title>',
+  '    <title>Koleslaw — AI Prompt Enhancement</title>',
   '    <script type="module" crossorigin src="/assets/index-DHOcSlju.js"></script>',
   '    <link rel="stylesheet" crossorigin href="/assets/index-4jiqPqtK.css">',
   '  </head>',
@@ -66,7 +66,7 @@ describe('buildPage', () => {
     const html = buildPage(SHELL, meta())
 
     expect(html).toContain('<title>A post about quantization</title>')
-    expect(html).not.toContain('koleslaw.ai — Developer Portal')
+    expect(html).not.toContain('Koleslaw — AI Prompt Enhancement')
     expect(count(html, '<title>')).toBe(1)
   })
 
