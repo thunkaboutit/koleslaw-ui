@@ -37,8 +37,14 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # SPA fallback — serve index.html for all non-file routes
+    # SPA fallback — serve index.html for all non-file routes.
+    #
+    # $uri.html comes first so the blog's build-time pages (blog.html,
+    # blog/<slug>.html — see plugins/blog-static.ts) are served directly with
+    # their baked-in title and Open Graph tags. Matching on the extension
+    # keeps canonical URLs free of trailing slashes, which a directory-index
+    # lookup would otherwise redirect to.
     location / {
-        try_files $uri $uri/ /index.html;
+        try_files $uri $uri.html $uri/ /index.html;
     }
 }

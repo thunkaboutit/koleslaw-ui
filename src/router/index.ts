@@ -52,6 +52,18 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/blog',
+      name: 'blog',
+      component: () => import('@/pages/BlogIndexPage.vue'),
+      meta: { public: true },
+    },
+    {
+      path: '/blog/:slug',
+      name: 'blog-post',
+      component: () => import('@/pages/BlogPostPage.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/pages/DashboardPage.vue'),

@@ -61,7 +61,7 @@ async function downloadPdf() {
       or use your browser's Print &rarr; Save as PDF.
     </p>
 
-    <div ref="contentEl" class="policy-content markdown-body" v-html="renderedHtml" />
+    <div ref="contentEl" class="policy-content prose" v-html="renderedHtml" />
   </div>
 </template>
 
@@ -144,97 +144,7 @@ async function downloadPdf() {
   font-weight: 700;
 }
 
-/* Markdown body styles */
-.markdown-body :deep(h1) {
-  font-size: 2rem;
-  margin: 2rem 0 1rem;
-}
-
-.markdown-body :deep(h2) {
-  font-size: 1.5rem;
-  margin: 1.75rem 0 0.75rem;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.markdown-body :deep(h3) {
-  font-size: 1.125rem;
-  margin: 1.25rem 0 0.5rem;
-}
-
-.markdown-body :deep(p) {
-  margin: 0.75rem 0;
-  line-height: 1.7;
-}
-
-.markdown-body :deep(ul),
-.markdown-body :deep(ol) {
-  margin: 0.75rem 0;
-  padding-left: 1.5rem;
-}
-
-.markdown-body :deep(li) {
-  margin: 0.35rem 0;
-  line-height: 1.7;
-}
-
-.markdown-body :deep(hr) {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin: 2rem 0;
-}
-
-.markdown-body :deep(a) {
-  color: var(--wl-navy);
-  text-decoration-color: var(--wl-gold);
-}
-
-.markdown-body :deep(strong) {
-  font-weight: 700;
-  color: var(--color-heading);
-}
-
-.markdown-body :deep(code) {
-  font-family: var(--font-mono);
-  font-size: 0.875em;
-  background: var(--color-background-mute);
-  padding: 0.15em 0.4em;
-  border-radius: 3px;
-}
-
-.markdown-body :deep(pre) {
-  background: var(--wl-charcoal);
-  color: var(--wl-cream);
-  padding: 1rem;
-  border-radius: var(--radius);
-  overflow-x: auto;
-  margin: 1rem 0;
-}
-
-.markdown-body :deep(pre code) {
-  background: transparent;
-  padding: 0;
-  color: inherit;
-}
-
-.markdown-body :deep(table) {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1rem 0;
-}
-
-.markdown-body :deep(th),
-.markdown-body :deep(td) {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--color-border);
-  text-align: left;
-}
-
-.markdown-body :deep(th) {
-  background: var(--color-background-mute);
-  font-weight: 700;
-  color: var(--color-heading);
-}
+/* Long-form typography lives in src/assets/prose.css, shared with the blog. */
 
 @media (max-width: 600px) {
   .policy-page {

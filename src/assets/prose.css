@@ -1,0 +1,153 @@
+/**
+ * Long-form markdown typography.
+ *
+ * Used by the blog and the policy pages. The playground keeps its own tighter
+ * `.markdown-body` rules in EnhancePanel.vue — chat bubbles and 2000-word
+ * articles want different measure, so they stay separate on purpose.
+ */
+
+.prose {
+  color: var(--color-text);
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: var(--font-heading);
+  color: var(--color-heading);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.prose h1 {
+  font-size: 2rem;
+  margin: 2rem 0 1rem;
+}
+
+.prose h2 {
+  font-size: 1.5rem;
+  margin: 2.25rem 0 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.prose h3 {
+  font-size: 1.125rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.prose p {
+  margin: 0.75rem 0;
+  line-height: 1.75;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.prose li {
+  margin: 0.35rem 0;
+  line-height: 1.75;
+}
+
+.prose blockquote {
+  margin: 1.5rem 0;
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 3px solid var(--wl-gold);
+  color: var(--wl-warm-gray);
+  font-style: italic;
+}
+
+.prose blockquote p {
+  margin: 0.35rem 0;
+}
+
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 2rem 0;
+}
+
+.prose a {
+  color: var(--wl-navy);
+  text-decoration-color: var(--wl-gold);
+}
+
+.prose strong {
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-background-mute);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+.prose pre {
+  background: var(--wl-charcoal);
+  color: var(--wl-cream);
+  padding: 1rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+/* useMarkdown emits <pre class="hljs">, and highlight.js's github theme paints
+   a light background on .hljs. These win on specificity so fenced code keeps
+   the design system's charcoal block instead. */
+.prose pre.hljs {
+  background: var(--wl-charcoal);
+  color: var(--wl-cream);
+}
+
+.prose pre.hljs code {
+  background: transparent;
+  color: inherit;
+}
+
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  margin: 1.5rem 0;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.prose th,
+.prose td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.prose th {
+  background: var(--color-background-mute);
+  font-weight: 700;
+  color: var(--color-heading);
+}
+
+/* Tables and code blocks scroll inside their own box rather than pushing the
+   page sideways on narrow screens. */
+@media (max-width: 600px) {
+  .prose table {
+    display: block;
+    overflow-x: auto;
+  }
+}

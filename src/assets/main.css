@@ -1,4 +1,5 @@
 @import './base.css';
+@import './prose.css';
 
 #app {
   position: relative;
