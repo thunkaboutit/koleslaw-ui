@@ -1,4 +1,4 @@
-# koleslaw-developer-portal
+# koleslaw-ui
 
 Vue 3 frontend for [koleslaw.ai](https://koleslaw.ai) — an AI-powered prompt enhancement tool. Users paste a rough prompt, optionally attach files (images, text, PDFs), and get back an improved version via streaming SSE.
 

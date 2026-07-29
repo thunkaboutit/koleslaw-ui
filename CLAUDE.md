@@ -1,6 +1,6 @@
-# koleslaw-developer-portal
+# koleslaw-ui
 
-Vue 3 SPA developer portal for the koleslaw-api backend. Provides auth, API key management, usage dashboard, and a chat/enhance playground.
+Vue 3 SPA — the web UI for the koleslaw-api backend. Provides auth, API key management, usage dashboard, and a chat/enhance playground.
 
 ## Tech Stack
 
