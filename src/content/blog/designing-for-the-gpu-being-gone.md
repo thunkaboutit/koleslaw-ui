@@ -1,5 +1,5 @@
 ---
-title: Seven reclaims in 21 hours
+title: AWS reclaimed my only GPU seven times in 21 hours
 description: Spot can take the box behind the product with two minutes of notice. Seven reclaims in 21 hours proved out the six design decisions that make that boring.
 date: 2026-08-15
 tags: [ aws, spot, gpu, resilience, koleslaw ]
@@ -7,10 +7,11 @@ draft: true
 ---
 
 > Working draft.  Second pass: cp review round 1 applied 2026-07-28.
-> Open before publish: (1) Title DECIDED (cp): "Seven reclaims in 21
-> hours" doubles as the HN title.  Slug deliberately stays
-> designing-for-the-gpu-being-gone: the URL keeps the search phrase
-> the title gave up (outline §2.7).  (2) Re-verify "Capacity is one"
+> Open before publish: (1) Title DECIDED (cp 2026-07-29): "AWS
+> reclaimed my only GPU seven times in 21 hours" doubles as the HN
+> title (supersedes "Seven reclaims in 21 hours", cp 2026-07-28).
+> Slug deliberately stays designing-for-the-gpu-being-gone: the URL
+> keeps the search phrase the title gave up (outline §2.7).  (2) Re-verify "Capacity is one"
 > and the drain-row stream figure right before publish: tracker 0.17
 > (pre-launch concurrency readiness: queue shaping, possibly parallel
 > slots) may change "one at a time" and the overflow mechanics.  This
