@@ -3,6 +3,15 @@ import type { ChatMessage, ChatChunk } from './types'
 const API_BASE = ''
 const PUBLIC_API_KEY = 'pk_live_fNuYW07Bf16zLFLbghxSPERYV4QS1SWF4-OuLJ5JcCE'
 
+/* Signed-in playground requests name one of the user's own keys by id; the API
+   authenticates the session cookie + ownership and applies that key's plan
+   limits. The public bearer stays on every request as the anonymous fallback. */
+function authHeaders(apiKeyId?: string | null): Record<string, string> {
+  const headers: Record<string, string> = { Authorization: `Bearer ${PUBLIC_API_KEY}` }
+  if (apiKeyId) headers['X-Api-Key-Id'] = apiKeyId
+  return headers
+}
+
 // ── Error handling ──────────────────────────────────────────────────
 
 /* The API returns {"detail": ...} (FastAPI/HTTPException) or {"error": ...}
@@ -62,10 +71,11 @@ export async function sendChatStream(
   messages: ChatMessage[],
   onChunk: (chunk: ChatChunk) => void,
   signal?: AbortSignal,
+  apiKeyId?: string | null,
 ): Promise<void> {
   const response = await fetch(`${API_BASE}/v1/chat`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${PUBLIC_API_KEY}` },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(apiKeyId) },
     body: JSON.stringify({ messages }),
     signal,
   })
@@ -87,6 +97,7 @@ export async function sendChatStreamWithFiles(
   files: File[],
   onChunk: (chunk: ChatChunk) => void,
   signal?: AbortSignal,
+  apiKeyId?: string | null,
 ): Promise<void> {
   const formData = new FormData()
   formData.append('messages', JSON.stringify(messages))
@@ -97,7 +108,7 @@ export async function sendChatStreamWithFiles(
   const response = await fetch(`${API_BASE}/v1/chat/upload`, {
     method: 'POST',
     // Let the browser set Content-Type with the multipart boundary
-    headers: { Authorization: `Bearer ${PUBLIC_API_KEY}` },
+    headers: authHeaders(apiKeyId),
     body: formData,
     signal,
   })
