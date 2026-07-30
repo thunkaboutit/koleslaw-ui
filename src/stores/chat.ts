@@ -2,6 +2,8 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { ChatMessage } from '@/api/types'
 import { sendChatStream, sendChatStreamWithFiles } from '@/api/chat'
+import { useAuthStore } from '@/stores/auth'
+import { useKeysStore } from '@/stores/keys'
 
 const STORAGE_KEY = 'koleslaw-chat-history'
 const MAX_MESSAGES = 100
@@ -61,11 +63,22 @@ export const useChatStore = defineStore('chat', () => {
       }
     }
 
+    // Signed-in users act with their selected key; visitors stay anonymous
+    const auth = useAuthStore()
+    const keysStore = useKeysStore()
+    const apiKeyId = auth.user ? keysStore.playgroundKeyId : null
+
     try {
       if (files?.length) {
-        await sendChatStreamWithFiles(messages.value, files, onChunk, abortController.signal)
+        await sendChatStreamWithFiles(
+          messages.value,
+          files,
+          onChunk,
+          abortController.signal,
+          apiKeyId,
+        )
       } else {
-        await sendChatStream(messages.value, onChunk, abortController.signal)
+        await sendChatStream(messages.value, onChunk, abortController.signal, apiKeyId)
       }
 
       if (streamingContent.value) {

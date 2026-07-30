@@ -3,6 +3,7 @@ import { ref, computed, watch, nextTick, onUnmounted, onBeforeUnmount } from 'vu
 import { useChatStore } from '@/stores/chat'
 import { useMarkdown } from '@/composables/useMarkdown'
 import PlatformActionBar from '@/components/PlatformActionBar.vue'
+import PlaygroundKeyPicker from '@/components/PlaygroundKeyPicker.vue'
 
 const emit = defineEmits<{
   'update:submitting': [value: boolean]
@@ -366,6 +367,9 @@ onUnmounted(() => {
 
 <template>
   <div class="enhance__container">
+    <!-- Signed-in users pick which of their API keys the playground uses -->
+    <PlaygroundKeyPicker class="enhance__key-picker" />
+
     <!-- Hidden file input -->
     <input
       ref="fileInputRef"
@@ -630,6 +634,10 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+.enhance__key-picker {
+  align-self: flex-end;
 }
 
 .enhance__input-area {
