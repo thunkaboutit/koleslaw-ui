@@ -1,30 +1,12 @@
 ---
 title: 4 hours and 37 minutes of serving nothing
 description: Running a 30B model on spot GPUs cut the bill from $588 to $245 a month. First, spot emptied the fleet for 4 hours and 37 minutes, because an armed 100%-spot ASG is never passive.
-date: 2026-08-08
+date: 2026-08-05
 series: Cutting a 30B model's hosting bill
 part: 2
 tags: [ aws, spot, autoscaling, gpu, koleslaw ]
-draft: true
+draft: false
 ---
-
-> Working draft. Fifth pass; review verdict was "this file is done,
-> the remaining work is outside the document."  Open before publish:
-> (1) RESOLVED 2026-07-28: the companion repo is public and
-> anon-verified; the links are live. (2) Post 1 back-edit CONFIRMED on disk
-> 2026-07-27 (its closing line now reads "four hours and thirty-seven
-> minutes at zero"), uncommitted alongside this file. Land both in
-> the same commit. (3) Title decided 2026-07-27 (cp): doubles as the
-> HN title. Slug stays running-a-30b-model-on-spot-gpus on purpose:
-> the URL keeps the search phrase the title gave up. Pattern adopted
-> for the rest of the series (outline §2.7). (4) The giving-up email
-> block and the state-machine diagram contain em-dashes and arrows.
-> Verbatim machine output, exempt from the no-em-dash rule. Do not
-> "fix" them. (5) The Trash detail stays OUT (cp 2026-07-27: the
-> morning's mechanics are not reconstructible, and the detection
-> paragraph now says so honestly). The email's delivery is still
-> receipted via the mailbox-corroboration bullet. (6) Remove this
-> note.
 
 ```text
 an instance was started in response to a difference between desired and
