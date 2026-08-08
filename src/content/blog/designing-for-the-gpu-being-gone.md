@@ -6,17 +6,20 @@ tags: [ aws, spot, gpu, resilience, koleslaw ]
 draft: true
 ---
 
-> Working draft.  Third pass: re-verify gates #2 and #3 applied
-> 2026-08-08 from docs/blog-receipts/post3-reverify-2026-08-07.md
-> (both cards measured, 12h ramp findings, verbatim 07-14 wall
-> artifact, cold-first-request finding, August churn).  Title DECIDED
-> (cp 2026-07-29): "AWS reclaimed my only GPU seven times in 21 hours"
-> doubles as the HN title.  Slug deliberately stays
-> designing-for-the-gpu-being-gone: the URL keeps the search phrase
-> the title gave up (outline §2.7).  This draft describes the
-> deployment as of 2026-08-08.  Open before publish: (1) flip
-> draft:false, (2) set date to the actual publish date (provenance
-> ruling), (3) remove this note.
+> Working draft.  Fourth pass: cp review round 4 applied 2026-08-08
+> (G1-G5 number fixes verified against the harness logs and post 2's
+> final text, C2/C4 cross-post alignment, S1-S6).  Round-4 items
+> closed without edits: G6 stale (companion repo PUBLIC since 07-28,
+> account id absent from HEAD), C1/C3/C5 verified correct as written,
+> C6 declined (umbrella tag `koleslaw` is present, and the suggested
+> name is the banned one).  Comment armor pre-written at workspace
+> docs/hn-post3-comment-armor.md.  Title DECIDED (cp 2026-07-29):
+> "AWS reclaimed my only GPU seven times in 21 hours" doubles as the
+> HN title.  Slug deliberately stays designing-for-the-gpu-being-gone:
+> the URL keeps the search phrase the title gave up (outline §2.7).
+> This draft describes the deployment as of 2026-08-08.  Open before
+> publish: (1) flip draft:false, (2) set date to the actual publish
+> date (provenance ruling), (3) remove this note.
 
 In the 21 hours after spot went back on, AWS took the GPU behind [Koleslaw](https://koleslaw.ai) seven times.  The
 fleet is one instance.  Seven times, a fresh box booted, restored an ~18 GB model cache from S3, loaded it into VRAM,
@@ -24,8 +27,8 @@ and was serving again under five minutes after its kernel started.  Users spent 
 cloud fallback.  One alarm fired.  It lasted two minutes and resolved itself.  I read about all of this afterward, in
 the logs.
 
-That churn is the deal I signed.  [Post 2](/blog/running-a-30b-model-on-spot-gpus) cut the GPU bill 60% by moving to
-spot, where AWS can reclaim the instance with two minutes of notice.  Post 2 was about the supervisor that arms and
+That churn is the deal I signed.  [Post 2](/blog/running-a-30b-model-on-spot-gpus) cut the GPU bill roughly 60% by
+moving to spot, where AWS can reclaim the instance with two minutes of notice.  Post 2 was about the supervisor that arms and
 disarms that bet.  This post is about the layer underneath: what happens to a user's request while the GPU is gone.
 
 When a two-minute warning is a normal Tuesday, degraded stops being an incident state.  It becomes a product state.
@@ -37,10 +40,11 @@ The deployment takes one enhance at a time.  One box, one card, one request in f
 not mine.  The pool spans two instance types, g6.xlarge with an L4 and g5.xlarge with an A10G, and whichever pool has
 capacity at launch time wins.  Both served production in the first week of August.
 
-The two cards are not the same product.  Measured with the same harness through the full public path, hours apart, a
-steady-state enhance runs a median 13.9 seconds on the L4, p95 near 20, and a median 9.9 on the A10G.  The A10G is
-~29% faster, which is what its memory bandwidth predicts, ~600 GB/s against the L4's ~300.  Decode is
-bandwidth-bound.  The faster memory answers faster.  So the arithmetic is short, and there are now two lines of it:
+The two cards are not the same product.  Measured with the same harness through the full public path, nine hours
+apart, a steady-state enhance runs a median 13.9 seconds on the L4, p95 near 20, and a median 9.9 on the A10G.  The
+A10G is ~29% faster end to end.  Decode is bandwidth-bound and the A10G carries twice the L4's memory bandwidth,
+~600 GB/s against ~300.  The end-to-end gap is smaller than the ratio because prompt processing and per-request
+overhead do not care about VRAM bandwidth.  So the arithmetic is short, and there are now two lines of it:
 
 `60s / ~14s per enhance ≈ 4.3 requests per minute (L4)`
 
@@ -59,17 +63,22 @@ downstream is sized from the conservative line:
 
 One at a time is not a simplification, either.  A 12-hour load ramp measured it at three scales on the A10G: alone,
 its requests ran a median 9.4 seconds, a shade under the probe's 9.9 on a different prompt mix.  Four at once, the
-median was 23.4.  Ten at once, 47.9.  Divide by 9.4 and
-the medians are queue positions, 2.5 and 5.  One request in flight, everyone else in line, a textbook serial queue.
+median was 23.4.  Ten at once, 47.9.  Divide by 9.4 and the medians sit at queue positions 2.5 and 5.1, against the
+2.5 and 5.5 a strict serial queue predicts.  The four-line matches exactly.  The ten-line runs a shade under, and
+the shortfall is the ceiling's doing: tenth positions that spill to the fallback leave the local sample.  One
+request in flight, everyone else in line.
 
 What bounds the line is a pair of timeouts, not a queue-full error.  The streaming path budgets 30 seconds to first
 token.  The sync path budgets 90 for the whole request.  Past either budget, the request spills to the cloud
 fallback.  Ollama's own `OLLAMA_MAX_QUEUE=3` turns out to bind only while a model is loading, because a warm model
-drains its intake queue faster than humans can arrive.  The ramp caught the ceiling firing with arithmetic
-precision: 11 of 428 requests spilled, every one at ten concurrent, every one between 91 and 96 seconds, because the
-tenth caller in a 9.4-second queue lands at ~94.  Zero spills at one or four.  Every request that reached the API
-got an answer, 420 of 420.  The other eight never arrived: the laptop running the test harness fell asleep mid-run,
-which is not a failure mode this section can design against.
+drains its intake queue faster than humans can arrive.  The ramp showed the ceiling working as designed.  11 of the
+420 requests that arrived spilled, every one at ten concurrent.  Each spill is the budget firing at 90.0 plus the
+fallback answering in 1 to 6 seconds, which is the 91 to 96 the harness clocked.  Why only ten concurrent: in a
+9.4-second queue, position ten lands at ~94, past the budget, while position four lands at ~38, nowhere near it.
+And ~94 against a 90 ceiling predicts a coin flip, which is what happened: one spill per burst, in 11 of the 22
+ten-bursts the ramp ran.  Zero spills at one or four.  Every request that reached the API got an answer, 420 of
+420.  The rest of the schedule died on the harness laptop, which fell asleep mid-run.  The receipts reconcile every
+request.
 
 The reframe that makes a single-digit-per-minute product survivable in public: a traffic spike cannot crash the GPU.
 Requests the box cannot take spill to the cloud fallback, and the fallback is metered per token.  A traffic problem
@@ -138,7 +147,8 @@ of a timeout later, so the API falls back in seconds.  `! -i lo`: the gate block
 the bootstrap talks to Ollama over localhost to restore and warm the model behind it.  And the delete runs only after
 the warm-up generate call returns, so the port opening asserts the model answers instantly, not that a process exists.
 
-After the fix, NLB target health means "serves instantly."  The public end-to-end check is even simpler:
+After the fix, NLB target health means "serves instantly."  The recovery section will put an asterisk on that
+promise, but at boot it is true.  The public end-to-end check is even simpler:
 `GET /v1/models` on the API lists the served tag.  If the tag is there, every layer between the internet and the VRAM
 is telling the truth.
 
@@ -180,8 +190,11 @@ Say the asymmetry plainly: zero-gap is a property of planned replacements, and a
 Launch-before-terminate needs a market that will sell you the second box while the first one still runs, and an
 interruption notice gives you two minutes in a market that just proved it wants the box back.  The re-verify for
 this post caught the failure mode fresh.  On August 6, two reclaims four and a half hours apart each watched the
-replacement launch fail on capacity, five times and then eight, and the fleet sat at zero instances for 2m45s and
-6m51s.  Notice to serving ran 8m07s and ~11m14s.  The next morning, a third reclaim was replaced in seven seconds.
+replacement launch fail on capacity, five times and then eight.  The market refused to sell a box for 2m45s and
+then 6m51s, notice to the launch that finally stuck.  The boots that followed were ordinary, 5m22s and ~4m23s
+launch to serving, so the windows closed at 8m07s and ~11m14s notice to serving.  The components sum, which is how
+you know the launch was the slow part and the boot was not.  The next morning, a third reclaim was replaced in
+seven seconds.
 Same ASG, same configuration.  The only variable is whether spot has anything to sell at that minute, and the July
 30 drought put a number on the alternative: an on-demand launch succeeded in under seven seconds in the same market
 where spot had been failing for 45 minutes.
@@ -239,7 +252,7 @@ line per stage to CloudWatch.  Across all 27 warm boots since the port gate exis
 (Medians do not sum to the median total.  Two stages cost ~1 second and are omitted: arming the drain hook and
 mounting the NVMe.  And a provenance note the table owes you: two of the 27 boots predate the quantization cutover
 and moved the 33.6 GB Q8 blob instead of the ~18 GB q4 one.  Both are from July 16, and the 355-second worst case
-is the incident-recovery boot from post 2.  They own the restore and serve-at maxima, and, as this section will
+is the recovery boot from the July 16 incident.  They own the restore and serve-at maxima, and, as this section will
 have to admit, both ends of the warm column.  The other 25 rows are the current model.)
 
 The two model stages are ~200 of the 267 seconds.  Everything else is packaging.  And those two stages are bimodal:
@@ -297,10 +310,14 @@ architecture choice and the cold-start cost are the same fact seen twice.
 
 The arithmetic lands on exactly the wrong user.  A product with no traffic yet is a product made of quiet
 stretches, and the first real visitor after one is precisely who pays the 46 seconds.  Nothing on the box is broken
-while they wait.  46 seconds is also half the Cloudflare wall the next section is about, so a longer prompt on a
-colder box is how the wall's bug would come back.  No fix is deployed yet.  The obvious candidate is a scheduled
-self-prime through long idle, the same generate call the bootstrap already ends on.  For now, this section is the
-receipt that the cost is real and measured.
+while they wait.  The probe paid the full 46 because it used the sync path, whose budget is 90 seconds.  The
+streaming path is tighter.  Its first-token budget is 30 seconds, and the cold prompt eval measured 29.3.  A margin
+of 0.7 seconds means a slightly longer prompt on a cold box trips the budget and the request spills.  Not a 524,
+the next section's fixes hold.  A quality cost: the first visitor after a quiet stretch is the one most likely to
+get the fallback model's answer instead of the fine-tune's.  The ramp never exercised that near-miss, all its
+spills were the sync ceiling, so the streaming edge is arithmetic on measurements, not yet an observation.  No fix
+is deployed.  The obvious candidate is a scheduled self-prime through long idle, the same generate call the
+bootstrap already ends on.  For now, this section is the receipt that the cost is real and measured.
 
 ## The 100-second wall
 
@@ -413,15 +430,15 @@ half hour found nothing left to retry.  Total human involvement: reading that lo
 That was July.  The first week of August re-ran the experiment while this post was being fact-checked.  Six
 replacements in roughly 32 hours across August 6 and 7, three of them spot interruption notices, one a rebalance
 swap, and the card class went A10G to L4 and back.  Two of the replacements have clean stamps: 322 and 294 seconds,
-launch to serving, inside the boot table's 229-to-355 band even with launch starting the clock before the kernel,
+launch to serving, a stricter clock than the boot table's kernel-to-serving, and still inside its 229-to-355 band,
 on hardware and code the July arc never saw.
 Then the next box held the 12-hour load ramp, 428 requests, and spot left it alone.  Seven in 21 hours, six in 32,
 zero in 12.  The reclaim rate is the least predictable number in the system, and the design's job was never to
 predict it.
 
 Every essay above is one reason those 21 hours were boring.  The capacity math meant the fallback could absorb the
-load.  The timeout pair meant no caller waited past a designed second.  The error taxonomy meant the fallback fired
-exactly when it should.  The port gate meant no request queued behind a
+load, and its timeout pair meant no caller waited past a designed second.  The error taxonomy meant the fallback
+fired exactly when it should.  The port gate meant no request queued behind a
 warming box.  The drain hook meant streams finished before their instance died.  The measured boot meant six
 reclaims never came near the threshold, and the seventh was judged by its instance's age, not by its alarm.  The
 keepalives meant every slow answer crossed the proxy instead of dying at second 100.  Boring took design, and the
@@ -471,11 +488,14 @@ reach.
   scale.  The drain-timeline stream duration is the same figure, because a stream lasts about one enhance.  Latency
   numbers name their card throughout, per the series rule.
 - The load ramp ran 2026-08-08, 00:03 to 12:00 UTC: 12 hourly cycles of 6 sequential enhances, 3x4 concurrent, and
-  2x10 concurrent, then 25 minutes idle, 428 requests against one g5.xlarge spot box that was never reclaimed.
-  Concurrency medians 9.4s, 23.4s, 47.9s at 1, 4, and 10.  All 11 fallback spills sat at ten concurrent between
-  91.3 and 95.8 seconds.  Every request that reached the API succeeded.  The eight missing from 428 are
-  client-side losses: the harness's own schedule shows multi-thousand-second gaps where the laptop running it
-  slept, and the server log confirms those requests never arrived.
+  2x10 concurrent, then 25 minutes idle, against one g5.xlarge spot box that was never reclaimed.  The schedule
+  called for 456 requests.  The laptop running the harness slept through most of cycle 12, so 28 requests, two of
+  its three four-waves and both of its ten-bursts, were never attempted before the run's clock expired, and 8 that
+  were attempted died on the client as read errors before reaching the API (the harness's own schedule shows
+  multi-thousand-second gaps, and the server log confirms those requests never arrived).  428 attempted, 420
+  arrived, 420 succeeded.  22 of the 24 scheduled ten-bursts ran, all complete.  Concurrency medians 9.4s, 23.4s,
+  47.9s at 1, 4, and 10.  All 11 fallback spills sat at ten concurrent between 91.3 and 95.8 seconds, one spill per
+  burst, in 11 of the 22 bursts.
 - The cold-first-request mechanism is the Ollama server log: no model load line anywhere in the idle window,
   `prompt eval time` falling from 29,318ms over 336 tokens to 211ms over 333 on consecutive requests, and the
   `graphs reused` counter jumping on the first request.  The hybrid reprocessing line is quoted verbatim.  The
