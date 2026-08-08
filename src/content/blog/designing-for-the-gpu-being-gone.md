@@ -6,21 +6,17 @@ tags: [ aws, spot, gpu, resilience, koleslaw ]
 draft: true
 ---
 
-> Working draft.  Second pass: cp review round 1 applied 2026-07-28.
-> Open before publish: (1) Title DECIDED (cp 2026-07-29): "AWS
-> reclaimed my only GPU seven times in 21 hours" doubles as the HN
-> title (supersedes "Seven reclaims in 21 hours", cp 2026-07-28).
-> Slug deliberately stays designing-for-the-gpu-being-gone: the URL
-> keeps the search phrase the title gave up (outline §2.7).  (2) Re-verify "Capacity is one"
-> and the drain-row stream figure right before publish: tracker 0.17
-> (pre-launch concurrency readiness: queue shaping, possibly parallel
-> slots) may change "one at a time" and the overflow mechanics.  This
-> draft describes the deployment as of 2026-07-28.  (3) Optional
-> gather: a verbatim pre-fix 524 artifact from 2026-07-14, if anything
-> survives.  The post states the symptom without one and the receipts
-> say so.  (4) Umbrella tag is `koleslaw`, CONFIRMED by cp 2026-07-28
-> (the two prior names struck same day; ruling in outline §1.2; swept
-> across all three posts).  (5) Remove this note.
+> Working draft.  Third pass: re-verify gates #2 and #3 applied
+> 2026-08-08 from docs/blog-receipts/post3-reverify-2026-08-07.md
+> (both cards measured, 12h ramp findings, verbatim 07-14 wall
+> artifact, cold-first-request finding, August churn).  Title DECIDED
+> (cp 2026-07-29): "AWS reclaimed my only GPU seven times in 21 hours"
+> doubles as the HN title.  Slug deliberately stays
+> designing-for-the-gpu-being-gone: the URL keeps the search phrase
+> the title gave up (outline §2.7).  This draft describes the
+> deployment as of 2026-08-08.  Open before publish: (1) flip
+> draft:false, (2) set date to the actual publish date (provenance
+> ruling), (3) remove this note.
 
 In the 21 hours after spot went back on, AWS took the GPU behind [Koleslaw](https://koleslaw.ai) seven times.  The
 fleet is one instance.  Seven times, a fresh box booted, restored an ~18 GB model cache from S3, loaded it into VRAM,
@@ -37,12 +33,23 @@ Product states get designed.  Here are the six decisions, in the order they expl
 
 ## Capacity is one
 
-The deployment takes one enhance at a time.  One box, one card, one request in flight.  An enhance runs 12 to 15
-seconds on the L4, so the arithmetic is short:
+The deployment takes one enhance at a time.  One box, one card, one request in flight.  Which card is spot's choice,
+not mine.  The pool spans two instance types, g6.xlarge with an L4 and g5.xlarge with an A10G, and whichever pool has
+capacity at launch time wins.  Both served production in the first week of August.
 
-`60s / ~14s per enhance ≈ 4.3 requests per minute`
+The two cards are not the same product.  Measured with the same harness through the full public path, hours apart, a
+steady-state enhance runs a median 13.9 seconds on the L4, p95 near 20, and a median 9.9 on the A10G.  The A10G is
+~29% faster, which is what its memory bandwidth predicts, ~600 GB/s against the L4's ~300.  Decode is
+bandwidth-bound.  The faster memory answers faster.  So the arithmetic is short, and there are now two lines of it:
 
-That is not per instance.  That is the product.  Every capacity decision downstream is sized from this division:
+`60s / ~14s per enhance ≈ 4.3 requests per minute (L4)`
+
+`60s / ~10s per enhance ≈ 6.1 requests per minute (A10G)`
+
+That is not per instance.  That is the product, and which line is true depends on the card spot handed you that hour.
+On August 7 a reclaim took the A10G and the replacement came back an L4, seven seconds later.  The product got ~29%
+slower in one hop, and nothing was wrong.  The box is not yours.  Neither is the silicon.  Every capacity decision
+downstream is sized from the conservative line:
 
 | Tier      | Cap            |
 |-----------|----------------|
@@ -50,10 +57,24 @@ That is not per instance.  That is the product.  Every capacity decision downstr
 | Free key  | 50/day per key |
 | Pro key   | 500/day per key |
 
-The reframe that makes a 4.3-per-minute product survivable in public: a traffic spike cannot crash the GPU.  Requests
-the box cannot take spill to the cloud fallback, and the fallback is metered per token.  A traffic problem arrives as
-a billing problem.  Which means the rate limits above are not abuse design.  They are cost design.  They put a ceiling
-on what a bad day can invoice.
+One at a time is not a simplification, either.  A 12-hour load ramp measured it at three scales on the A10G: alone,
+its requests ran a median 9.4 seconds, a shade under the probe's 9.9 on a different prompt mix.  Four at once, the
+median was 23.4.  Ten at once, 47.9.  Divide by 9.4 and
+the medians are queue positions, 2.5 and 5.  One request in flight, everyone else in line, a textbook serial queue.
+
+What bounds the line is a pair of timeouts, not a queue-full error.  The streaming path budgets 30 seconds to first
+token.  The sync path budgets 90 for the whole request.  Past either budget, the request spills to the cloud
+fallback.  Ollama's own `OLLAMA_MAX_QUEUE=3` turns out to bind only while a model is loading, because a warm model
+drains its intake queue faster than humans can arrive.  The ramp caught the ceiling firing with arithmetic
+precision: 11 of 428 requests spilled, every one at ten concurrent, every one between 91 and 96 seconds, because the
+tenth caller in a 9.4-second queue lands at ~94.  Zero spills at one or four.  Every request that reached the API
+got an answer, 420 of 420.  The other eight never arrived: the laptop running the test harness fell asleep mid-run,
+which is not a failure mode this section can design against.
+
+The reframe that makes a single-digit-per-minute product survivable in public: a traffic spike cannot crash the GPU.
+Requests the box cannot take spill to the cloud fallback, and the fallback is metered per token.  A traffic problem
+arrives as a billing problem.  Which means the rate limits above are not abuse design.  They are cost design.  They
+put a ceiling on what a bad day can invoice.
 
 ## The fallback is availability-only, and it is asymmetric
 
@@ -63,8 +84,9 @@ deciding when the fallback must NOT fire.
 The rule: the fallback engages only on errors that mean "the backend serving this model is unreachable or not serving
 it right now."  In [the API's error taxonomy](https://github.com/thunkaboutit/koleslaw-api/blob/22ea1a4/src/koleslaw_api/services/llm.py),
 that is `Timeout`, `APIConnectionError`, `ServiceUnavailableError`, `InternalServerError`, and `NotFoundError`.
-Errors that would fail identically anywhere stay visible: bad auth, a malformed request, a rate limit.  Retrying those
-on a second model answers a question nobody asked.
+The capacity section's 30- and 90-second budgets land here too: an expired budget surfaces as one of these
+availability errors, so a box that is merely busy gets the same rescue as a box that is gone.  Errors that would fail identically anywhere stay visible: bad auth, a malformed
+request, a rate limit.  Retrying those on a second model answers a question nobody asked.
 
 `NotFoundError` earns its place on the list, and the reasoning is the kind of thing that only looks obvious after you
 write it down.  A GPU replacement that has not finished registering its model answers 404.  That 404 says nothing
@@ -138,7 +160,7 @@ T+0:00   AWS posts the interruption notice.  Two minutes on the clock.
 T+0:05   the drain hook (a 5-second poll against instance metadata) sees
          it and deregisters the box from the NLB.  New requests stop
          routing here.  In-flight SSE streams run to completion: a stream
-         lasts about one enhance, 12 to 15 seconds mean on the L4, so the
+         lasts about one enhance, ~14 seconds on the slower card, so the
          notice outlives every stream it interrupts.  From this moment
          the API answers everything from the fallback.
 T+2:00   the instance is gone.
@@ -153,6 +175,16 @@ clock starts a couple of minutes before the notice even posts, and the fallback 
 When the market has nothing at the warning, the launch waits for the reclaim, the same clock starts at T+2:00 at
 the earliest, and the window runs eight and a half minutes, give or take.  The seventh reclaim shows how much later
 than that the market can make it.
+
+Say the asymmetry plainly: zero-gap is a property of planned replacements, and a reclaim can never have it.
+Launch-before-terminate needs a market that will sell you the second box while the first one still runs, and an
+interruption notice gives you two minutes in a market that just proved it wants the box back.  The re-verify for
+this post caught the failure mode fresh.  On August 6, two reclaims four and a half hours apart each watched the
+replacement launch fail on capacity, five times and then eight, and the fleet sat at zero instances for 2m45s and
+6m51s.  Notice to serving ran 8m07s and ~11m14s.  The next morning, a third reclaim was replaced in seven seconds.
+Same ASG, same configuration.  The only variable is whether spot has anything to sell at that minute, and the July
+30 drought put a number on the alternative: an on-demand launch succeeded in under seven seconds in the same market
+where spot had been failing for 45 minutes.
 
 Post 2's failover threshold is 12 minutes precisely so that neither case looks like a drought: routine recovery, in
 either flavor, must never trigger a failover.  Six of the seven July reclaims stayed under that line.  The seventh
@@ -216,7 +248,8 @@ the two spot pools.  Instance types are only verifiable while an instance exists
 live: two g6.xlarge (L4) both landed in the fast cluster, one g5.xlarge (A10G) in the slow one.  The terminated
 rows are inferred from their cluster.
 
-If you have read post 2, that order looks backwards: there, the A10G is the fast card.  Both readings are right.
+If you have read post 2, or the capacity section above, that order looks backwards: there, the A10G is the fast
+card.  Both readings are right.
 Inference is bound by VRAM bandwidth, where the A10G wins.  Loading is bound by the disk and the bus, and it never
 touches VRAM bandwidth, so the card that answers faster is allowed to load slower.  I will label that a plausible
 mechanism rather than a traced one.  What the table proves is only the split itself.
@@ -235,6 +268,40 @@ bucket, an 11-second stage.  The serving-critical path pulls nothing from the pu
 on an upstream download is a boot that can fail at 3am, and this design's whole posture is that 3am belongs to the
 machines.
 
+There is a third clock, and it is not a boot clock at all.  The port gate's promise is that an open port means the
+model answers instantly, and at boot that is true.  The re-verify for this post found the promise has a shelf life.
+A probe hit the box after 5h44m without traffic.  The first request took 46.28 seconds.  The seven behind it ran a
+13.86-second median.  Same box, same resident model, 3x slower for whoever showed up first.
+
+It is not a model reload.  The server log shows no load line and no runner start: `KEEP_ALIVE=-1` held the model in
+VRAM the whole time, exactly as configured.  The entire penalty is cold prompt processing:
+
+```text
+task 0     prompt eval time =   29318.58 ms /  336 tokens (  87.26 ms per token,    11.46 tokens per second)
+task 1150  prompt eval time =     210.97 ms /  333 tokens (   0.63 ms per token,  1578.39 tokens per second)
+```
+
+29.3 seconds, then 0.21 seconds, for the same-size prompt, on consecutive requests.  The `graphs reused` counter in
+the same log names the cause: the first request pays to build CUDA graphs, and every later request reuses them.
+The idle threshold is bounded but not pinned.  The load ramp put a 25-minute gap in front of 11 measured requests
+and the penalty never showed, a 9.40-second median against 9.36 for everything else.  Idle stretches of 5.7 and 7
+hours cost 46 and 51 seconds.  A quiet half hour is free.  A quiet workday is not.  And the fast card does not
+help: the 51 was the A10G, the 46 the slower L4.  Building CUDA graphs is compute and driver work, not memory
+bandwidth, so the card that answers fastest warms no faster.
+
+The model's own architecture doubles the bill.  Every request logs `forcing full prompt re-processing due to lack
+of cache data (likely due to SWA or hybrid/recurrent memory)`.  A hybrid attention+SSM model cannot restore its
+recurrent state the way a pure-attention model restores a KV cache, so every request reprocesses its whole prompt
+from token zero.  Warm, that is 211 milliseconds and invisible.  Cold, it is the 29 seconds above.  The
+architecture choice and the cold-start cost are the same fact seen twice.
+
+The arithmetic lands on exactly the wrong user.  A product with no traffic yet is a product made of quiet
+stretches, and the first real visitor after one is precisely who pays the 46 seconds.  Nothing on the box is broken
+while they wait.  46 seconds is also half the Cloudflare wall the next section is about, so a longer prompt on a
+colder box is how the wall's bug would come back.  No fix is deployed yet.  The obvious candidate is a scheduled
+self-prime through long idle, the same generate call the bootstrap already ends on.  For now, this section is the
+receipt that the cost is real and measured.
+
 ## The 100-second wall
 
 Cloudflare closes a proxied connection that stays silent for ~100 seconds, and the number is not configurable below
@@ -242,6 +309,22 @@ the Enterprise tier.  This product is built on a model that thinks before it ans
 visible tokens.  Slow request, silent connection, and at second 100 the user gets a 524 error page for the crime of
 asking a hard question.  The worst requests failed at a wall the best requests never met, which made it look
 intermittent, which made it annoying to diagnose.
+
+Intermittent now has a number.  On July 14, the day this bug was being diagnosed, the GPU tier logged 69
+generations.  Two ran past the wall:
+
+```text
+[GIN] 2026/07/14 - 16:24:47 | 200 |         1m51s |    10.42.11.231 | POST     "/api/chat"
+[GIN] 2026/07/14 - 18:15:17 | 200 |         1m43s |     10.42.11.79 | POST     "/api/chat"
+```
+
+Both lines are status 200, and that is what makes them the artifact.  The backend finished and answered, at 111 and
+103 seconds of generation, into connections Cloudflare had closed at second 100.  The 524 itself is inferred from
+that arithmetic, because Cloudflare's side of the conversation never reaches my logs.  The other 67 generations
+that day finished well inside the wall, the slowest at 34 seconds.  Two of 69 is ~3%, and ~3% is exactly the
+failure rate that reads as flaky instead of broken.  A third line shows the mechanism.  Seven seconds before the
+1m51s line, the same box completed a 73-second generation.  Two requests, one card, `NUM_PARALLEL=1`: the second
+waited out the first, and its own generation carried it over the wall.
 
 The fix is that bytes must flow.  Two bytes-flow guarantees, from the
 [streaming endpoint](https://github.com/thunkaboutit/koleslaw-api/blob/22ea1a4/src/koleslaw_api/routes/enhance.py): the
@@ -277,10 +360,13 @@ async def _with_keepalive(agen):
 SSE comment lines are in the spec, so compliant parsers ignore them, and line-based parsers that only look for
 `data:` prefixes skip them too.  The proxy sees traffic.  The user sees nothing until there is something to see.
 
-The accepted limit, stated plainly: the non-streaming endpoint, `/v1/enhance/sync`, still has the 100-second
-ceiling, because there is no stream to keep alive.  At 12 to 15 second enhances on the L4 it clears the wall by a
-wide margin.  If latency ever grew by an order of magnitude, that endpoint would quietly stop working for the
-slowest requests, and this paragraph is the reminder that the limit was accepted, not solved.
+The non-streaming endpoint, `/v1/enhance/sync`, has no stream to keep alive, so for it the wall cannot be papered
+over.  It is bounded instead.  The sync path carries an explicit 90-second budget, deliberately set under
+Cloudflare's 100: a request that cannot finish in 90 spills to the fallback and answers, instead of dying as a 524
+ten seconds later.  A live burst test proved the ceiling to the decisecond, two fallback lines in the API log at
+arrival plus 90.0 seconds, and the load ramp then fired it 11 times across 22 bursts, every one between 91 and 96
+seconds.  An earlier draft of this paragraph called the sync ceiling accepted, not solved.  True when written.  Now
+it is bounded, and the bound has receipts.
 
 ## Seven reclaims later
 
@@ -324,8 +410,18 @@ views disagreed about the present, the guard's was closer, and at 02:22:04 the a
 went back to OK.  Two minutes of ALARM, zero actions taken, and the scanner that retries skipped failovers every
 half hour found nothing left to retry.  Total human involvement: reading that log line the next morning.
 
+That was July.  The first week of August re-ran the experiment while this post was being fact-checked.  Six
+replacements in roughly 32 hours across August 6 and 7, three of them spot interruption notices, one a rebalance
+swap, and the card class went A10G to L4 and back.  Two of the replacements have clean stamps: 322 and 294 seconds,
+launch to serving, inside the boot table's 229-to-355 band even with launch starting the clock before the kernel,
+on hardware and code the July arc never saw.
+Then the next box held the 12-hour load ramp, 428 requests, and spot left it alone.  Seven in 21 hours, six in 32,
+zero in 12.  The reclaim rate is the least predictable number in the system, and the design's job was never to
+predict it.
+
 Every essay above is one reason those 21 hours were boring.  The capacity math meant the fallback could absorb the
-load.  The error taxonomy meant it fired exactly when it should.  The port gate meant no request queued behind a
+load.  The timeout pair meant no caller waited past a designed second.  The error taxonomy meant the fallback fired
+exactly when it should.  The port gate meant no request queued behind a
 warming box.  The drain hook meant streams finished before their instance died.  The measured boot meant six
 reclaims never came near the threshold, and the seventh was judged by its instance's age, not by its alarm.  The
 keepalives meant every slow answer crossed the proxy instead of dying at second 100.  Boring took design, and the
@@ -337,7 +433,7 @@ reach.
 
 > ## Ask this of your own stack
 >
-> This post's version of the series' reproduce-this box is five questions instead of commands.  They are the five
+> This post's version of the series' reproduce-this box is six questions instead of commands.  They are the six
 > this architecture answers, and the answers were all measured, not designed on faith.
 >
 > 1. What is your actual concurrent capacity, as a number you could say out loud?
@@ -347,6 +443,7 @@ reach.
 > 4. Which boot artifact is expensive, and where is it cached?  What happens if the box dies while the cache is
 >    cold?
 > 5. What cuts your long-lived connections, and at what second?  Your proxy knows.  Do you?
+> 6. What does your first request after six idle hours cost?  Would anything in your monitoring tell you?
 
 ## Receipts
 
@@ -366,10 +463,30 @@ reach.
 - The seven-reclaims churn, the 02:20 to 02:22 alarm, and the failover-skipped line are from the ASG activity
   history, the CloudWatch alarm history, and the watchdog Lambda's log for 2026-07-27 to 07-28.  The skip line is
   verbatim.
-- The capacity arithmetic uses the 12 to 15 second production mean on the L4 (g6.xlarge), post 1's figure.  The
-  one-at-a-time serialization was observed under game-day replay load.  The drain-timeline stream duration is the
-  same figure, because a stream lasts about one enhance.  Latency numbers name their card throughout, per the
-  series rule.
+- The per-card latency figures are two probes through the full public path with one harness: 2026-08-07 against a
+  g6.xlarge (L4), 8 sequential enhances, steady-state median 13.86s after a 46.28s cold first request, and
+  2026-08-08 against a g5.xlarge (A10G), 12 sequential, median 9.9s after a 50.94s cold first.  They agree with the
+  2026-07-16 70-prompt eval (mean 14.5s, p95 19.8s, L4) and the 2026-07-30 burst ladder (10.8 to 15.7s per enhance,
+  L4).  The one-at-a-time serialization was observed under game-day replay load before the ramp measured it at
+  scale.  The drain-timeline stream duration is the same figure, because a stream lasts about one enhance.  Latency
+  numbers name their card throughout, per the series rule.
+- The load ramp ran 2026-08-08, 00:03 to 12:00 UTC: 12 hourly cycles of 6 sequential enhances, 3x4 concurrent, and
+  2x10 concurrent, then 25 minutes idle, 428 requests against one g5.xlarge spot box that was never reclaimed.
+  Concurrency medians 9.4s, 23.4s, 47.9s at 1, 4, and 10.  All 11 fallback spills sat at ten concurrent between
+  91.3 and 95.8 seconds.  Every request that reached the API succeeded.  The eight missing from 428 are
+  client-side losses: the harness's own schedule shows multi-thousand-second gaps where the laptop running it
+  slept, and the server log confirms those requests never arrived.
+- The cold-first-request mechanism is the Ollama server log: no model load line anywhere in the idle window,
+  `prompt eval time` falling from 29,318ms over 336 tokens to 211ms over 333 on consecutive requests, and the
+  `graphs reused` counter jumping on the first request.  The hybrid reprocessing line is quoted verbatim.  The
+  25-minute null result is the ramp's 11 cycle-opening requests, median 9.40s against 9.36s for the rest.
+- The 30- and 90-second budgets and `OLLAMA_MAX_QUEUE=3` are the deployed configuration.  The decisecond proof is
+  the 2026-07-30 burst test: two fallback WARNING lines at arrival plus 90.0 seconds, and Ollama logging the two
+  abandoned tasks as cancelled server-side, so a spilled request stops costing GPU time.
+- The August 6 to 7 churn is the ASG activity history: three spot interruption notices, one rebalance
+  recommendation, 13 failed launches on capacity across the two droughts, and the 7-second replacement.  The 322-
+  and 294-second launch-to-serving stamps are the ASG's launch timestamps crossed with the GPU tier's log line for
+  the first served request.
 - The reclaim-window band is bounded by the alarm history, not stopwatched per reclaim.  Six of the seven reclaims
   never tripped the 12-minute no-healthy-target alarm, so their windows sat under it.  The seventh's window is
   derived from the alarm's arithmetic crossed with the boot's own `BOOTSTAGE` lines: the 02:11 boot was serving at
@@ -392,5 +509,8 @@ reach.
 - The fallback error classes, the streaming first-byte behavior, and the keepalive wrapper are from the API's
   public source, quoted verbatim minus imports.  The iptables lines are from the bootstrap script in the companion
   repo.
-- The 100-second figure is Cloudflare's documented behavior for proxied connections.  The pre-fix 524s were
-  observed on 2026-07-14 while diagnosing them.  No artifact of one survives, so that claim is memory, not a log.
+- The 100-second figure is Cloudflare's documented behavior for proxied connections.  The two over-the-wall GIN
+  lines are verbatim from the GPU tier's log for 2026-07-14, transcribed 2026-08-07, days before the log group's
+  30-day retention expired them.  The keepalive fix, commit `2d1b563`, was authored 2026-07-14T20:42:50Z, hours
+  after both events, so they are pre-fix by timestamp.  The 524s themselves are inferred: both lines are
+  server-side 200s, and Cloudflare's side of a dropped connection never reaches these logs.
