@@ -6,13 +6,16 @@ tags: [ aws, spot, gpu, resilience, koleslaw ]
 draft: true
 ---
 
-> Working draft.  Fourth pass: cp review round 4 applied 2026-08-08
-> (G1-G5 number fixes verified against the harness logs and post 2's
-> final text, C2/C4 cross-post alignment, S1-S6).  Round-4 items
-> closed without edits: G6 stale (companion repo PUBLIC since 07-28,
-> account id absent from HEAD), C1/C3/C5 verified correct as written,
-> C6 declined (umbrella tag `koleslaw` is present, and the suggested
-> name is the banned one).  Comment armor pre-written at workspace
+> Working draft.  Fifth pass: cp review round 5 applied 2026-08-08.
+> Round-5 G1 closed by a fresh CloudWatch pull: both drought boxes'
+> BOOTSTAGE lines stamped (304s and 244s kernel to serving, mid-band),
+> drought-2 serving wall-clocked at 20:59:31, windows now sum from
+> stamps (8m07s, 11m11s), receipts bullet sources every component.
+> M1 verified from requests.jsonl (local-only median 47.86 vs 49.0
+> pooled) and defined in receipts.  M2 rebased to "gave the ~29%
+> back."  C6 follow-ups confirmed: all three posts carry `koleslaw`,
+> outline records the ruling and both struck names.  Retry-cadence
+> answer added to the armor doc.  Comment armor at workspace
 > docs/hn-post3-comment-armor.md.  Title DECIDED (cp 2026-07-29):
 > "AWS reclaimed my only GPU seven times in 21 hours" doubles as the
 > HN title.  Slug deliberately stays designing-for-the-gpu-being-gone:
@@ -51,8 +54,8 @@ overhead do not care about VRAM bandwidth.  So the arithmetic is short, and ther
 `60s / ~10s per enhance ≈ 6.1 requests per minute (A10G)`
 
 That is not per instance.  That is the product, and which line is true depends on the card spot handed you that hour.
-On August 7 a reclaim took the A10G and the replacement came back an L4, seven seconds later.  The product got ~29%
-slower in one hop, and nothing was wrong.  The box is not yours.  Neither is the silicon.  Every capacity decision
+On August 7 a reclaim took the A10G and the replacement came back an L4, seven seconds later.  The product gave the
+~29% back in one hop, and nothing was wrong.  The box is not yours.  Neither is the silicon.  Every capacity decision
 downstream is sized from the conservative line:
 
 | Tier      | Cap            |
@@ -191,10 +194,11 @@ Launch-before-terminate needs a market that will sell you the second box while t
 interruption notice gives you two minutes in a market that just proved it wants the box back.  The re-verify for
 this post caught the failure mode fresh.  On August 6, two reclaims four and a half hours apart each watched the
 replacement launch fail on capacity, five times and then eight.  The market refused to sell a box for 2m45s and
-then 6m51s, notice to the launch that finally stuck.  The boots that followed were ordinary, 5m22s and ~4m23s
-launch to serving, so the windows closed at 8m07s and ~11m14s notice to serving.  The components sum, which is how
-you know the launch was the slow part and the boot was not.  The next morning, a third reclaim was replaced in
-seven seconds.
+then 6m51s, notice to the launch that finally stuck.  The boots that followed were ordinary by the boot table's own
+clock, 304 and 244 seconds kernel to serving, mid-band.  Launch to serving they ran 5m22s and 4m20s, so the windows
+closed at 8m07s and 11m11s notice to serving.  The components sum from independent stamps, which is how you know
+the launch was the slow part and the boot was not.  The next morning, a third reclaim was replaced in seven
+seconds.
 Same ASG, same configuration.  The only variable is whether spot has anything to sell at that minute, and the July
 30 drought put a number on the alternative: an on-demand launch succeeded in under seven seconds in the same market
 where spot had been failing for 45 minutes.
@@ -429,9 +433,9 @@ half hour found nothing left to retry.  Total human involvement: reading that lo
 
 That was July.  The first week of August re-ran the experiment while this post was being fact-checked.  Six
 replacements in roughly 32 hours across August 6 and 7, three of them spot interruption notices, one a rebalance
-swap, and the card class went A10G to L4 and back.  Two of the replacements have clean stamps: 322 and 294 seconds,
-launch to serving, a stricter clock than the boot table's kernel-to-serving, and still inside its 229-to-355 band,
-on hardware and code the July arc never saw.
+swap, and the card class went A10G to L4 and back.  The two drought replacements wrote their own `BOOTSTAGE` lines,
+304 and 244 seconds kernel to serving, the boot table's own clock, both mid-band, on hardware and code the July arc
+never saw.
 Then the next box held the 12-hour load ramp, 428 requests, and spot left it alone.  Seven in 21 hours, six in 32,
 zero in 12.  The reclaim rate is the least predictable number in the system, and the design's job was never to
 predict it.
@@ -495,7 +499,8 @@ reach.
   multi-thousand-second gaps, and the server log confirms those requests never arrived).  428 attempted, 420
   arrived, 420 succeeded.  22 of the 24 scheduled ten-bursts ran, all complete.  Concurrency medians 9.4s, 23.4s,
   47.9s at 1, 4, and 10.  All 11 fallback spills sat at ten concurrent between 91.3 and 95.8 seconds, one spill per
-  burst, in 11 of the 22 bursts.
+  burst, in 11 of the 22 bursts.  Concurrency medians are of locally served requests, the 11 spills excluded.
+  Including them moves the ten-concurrent median from 47.9 to 49.0 and the other two not at all.
 - The cold-first-request mechanism is the Ollama server log: no model load line anywhere in the idle window,
   `prompt eval time` falling from 29,318ms over 336 tokens to 211ms over 333 on consecutive requests, and the
   `graphs reused` counter jumping on the first request.  The hybrid reprocessing line is quoted verbatim.  The
@@ -504,9 +509,15 @@ reach.
   the 2026-07-30 burst test: two fallback WARNING lines at arrival plus 90.0 seconds, and Ollama logging the two
   abandoned tasks as cancelled server-side, so a spilled request stops costing GPU time.
 - The August 6 to 7 churn is the ASG activity history: three spot interruption notices, one rebalance
-  recommendation, 13 failed launches on capacity across the two droughts, and the 7-second replacement.  The 322-
-  and 294-second launch-to-serving stamps are the ASG's launch timestamps crossed with the GPU tier's log line for
-  the first served request.
+  recommendation, 13 failed launches on capacity across the two droughts, and the 7-second replacement.  The
+  drought components are stamped, not derived.  Notices 16:14:43 and 20:48:21 and launches 16:17:28 and 20:55:12
+  are activity-history timestamps.  Drought 1's serving stamp is its first external request in the GPU tier's log,
+  16:22:50, which is the 5m22s.  Drought 2's box was rebalance-swapped away before external traffic reached it, so
+  its serving stamp is its own `BOOTSTAGE` port-open, wall-clocked by the warm-up generate completing at 20:59:31
+  with the load balancer's probes answering two seconds later, which is the 4m20s.  Both drought boxes wrote
+  kernel-to-serving `BOOTSTAGE` stamps, 304 and 244 seconds, pulled 2026-08-08.  The 294-second stamp is the
+  rebalance-swap box, ASG launch crossed with the GPU log.  Both windows sum from stamps: 2m45s plus 5m22s is
+  8m07s, and 6m51s plus 4m20s is 11m11s.
 - The reclaim-window band is bounded by the alarm history, not stopwatched per reclaim.  Six of the seven reclaims
   never tripped the 12-minute no-healthy-target alarm, so their windows sat under it.  The seventh's window is
   derived from the alarm's arithmetic crossed with the boot's own `BOOTSTAGE` lines: the 02:11 boot was serving at
