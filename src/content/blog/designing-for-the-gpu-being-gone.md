@@ -161,8 +161,8 @@ T+0:05   the drain hook (a 5-second poll against instance metadata) sees
 T+2:00   the instance is gone.
 ```
 
-The replacement's clock is separate, and where it starts is what sets the window.  Launch to serving runs ~5.5
-minutes: a ~1.5-minute provisioning lead, launch to the first line of the bootstrap's log (EC2 provisioning,
+The replacement's clock is separate, and where it starts is what sets the window.  From launch to serving runs
+~5.5 minutes: a ~1.5-minute provisioning lead, launch to the first line of the bootstrap's log (EC2 provisioning,
 kernel, and cloud-init, so the boot table's first stage lives inside this figure and is counted once), then ~4
 minutes for the remaining warm-boot stages (next section).  Traffic routes about a minute after that, once the NLB probes pass.
 When capacity rebalancing pre-provisions a successor at the rebalance warning, usually from the other pool, that
