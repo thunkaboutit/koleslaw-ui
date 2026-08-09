@@ -55,15 +55,21 @@ request in flight, everyone else in line.
 
 What bounds the line is a pair of timeouts, not a queue-full error.  The streaming path budgets 30 seconds to first
 token.  The sync path budgets 90 for the whole request.  Past either budget, the request spills to the cloud
-fallback.  Ollama's own `OLLAMA_MAX_QUEUE=3` turns out to bind only while a model is loading, because a warm model
-drains its intake queue faster than humans can arrive.  The ramp showed the ceiling working as designed.  11 of the
-420 requests that arrived spilled, every one at ten concurrent.  Each spill is the budget firing at 90.0 plus the
-fallback answering in 1 to 6 seconds, which is the 91 to 96 the harness clocked.  Why only ten concurrent: in a
-9.4-second queue, position ten lands at ~94, past the budget, while position four lands at ~38, nowhere near it.
-And ~94 against a 90 ceiling predicts a coin flip, which is what happened: one spill per burst, in 11 of the 22
-ten-bursts the ramp ran.  Zero spills at one or four.  Every request that reached the API got an answer, 420 of
-420.  The rest of the schedule died on the harness laptop, which fell asleep mid-run.  The receipts reconcile every
-request.
+fallback.
+
+Ollama's own `OLLAMA_MAX_QUEUE=3` turns out to bind only while a model is loading.  A warm model drains its intake
+queue faster than humans can arrive.
+
+The ramp showed the ceiling working as designed.  11 of the 420 requests that arrived spilled, every one at ten
+concurrent.  Each spill is the budget firing at 90.0 plus the fallback answering in 1 to 6 seconds, which is the
+91 to 96 the harness clocked.
+
+Why only ten concurrent: in a 9.4-second queue, position ten lands at ~94, past the budget, while position four
+lands at ~38, nowhere near it.  And ~94 against a 90 ceiling predicts a coin flip, which is what happened: one
+spill per burst, in 11 of the 22 ten-bursts the ramp ran.  Zero spills at one or four.
+
+Every request that reached the API got an answer, 420 of 420.  The rest of the schedule died on the harness
+laptop, which fell asleep mid-run.  The receipts reconcile every request.
 
 The reframe that makes a single-digit-per-minute product survivable in public: a traffic spike cannot crash the GPU.
 Requests the box cannot take spill to the cloud fallback, and the fallback is metered per token.  A traffic problem
@@ -161,32 +167,48 @@ T+0:05   the drain hook (a 5-second poll against instance metadata) sees
 T+2:00   the instance is gone.
 ```
 
-The replacement's clock is separate, and where it starts is what sets the window.  Launch to serving runs ~5.5
-minutes: ~1.5 minutes from launch to the first line of the bootstrap's log (EC2 provisioning, kernel, and
-cloud-init, so the boot table's first stage lives inside this figure and is counted once), then ~4 minutes for the
-remaining warm-boot stages (next section).  Traffic routes about a minute after that, once the NLB probes pass.
-When capacity rebalancing pre-provisions a successor at the rebalance warning, usually from the other pool, that
-clock starts a couple of minutes before the notice even posts, and the fallback window comes in under five minutes.
-When the market has nothing at the warning, the launch waits for the reclaim, the same clock starts at T+2:00 at
-the earliest, and the window runs eight and a half minutes, give or take.  The seventh reclaim shows how much later
-than that the market can make it.
+The replacement's clock is separate, and where it starts is what sets the window.  From launch to serving runs
+~5.5 minutes, and traffic routes about a minute after that, once the NLB probes pass.
 
-Say the asymmetry plainly: zero-gap is a property of planned replacements, and a reclaim can never have it.
-Launch-before-terminate needs a market that will sell you the second box while the first one still runs, and an
-interruption notice gives you two minutes in a market that just proved it wants the box back.  The re-verify for
-this post caught the failure mode fresh.  On August 6, two reclaims four and a half hours apart each watched the
-replacement launch fail on capacity, five times and then eight.  The market refused to sell a box for 2m45s and
-then 6m51s, notice to the launch that finally stuck.  The boots that followed were ordinary by the boot table's own
-clock, 304 and 244 seconds kernel to serving, both inside the band.  Launch to serving they ran 5m22s and 4m19s, so
-the windows closed at 8m07s and 11m10s notice to serving.  The components sum from independent stamps, which is how
-you know the launch was the slow part and the boot was not.  The August boxes also cut the fixed costs: the
-provisioning lead ran ~15 seconds on one box and at most 18 on the other, against the ~1.5 minutes the timeline
-above budgets, and the probes passed within seconds of the port opening.  The lead varies more than any boot stage,
-which is how a 4m19s launch-to-serving can contain a 244-second boot.  The next morning, a third reclaim was
-replaced in seven seconds.
-Same ASG, same configuration.  The only variable is whether spot has anything to sell at that minute, and the July
-30 drought put a number on the alternative: an on-demand launch succeeded in under seven seconds in the same market
-where spot had been failing for 45 minutes.
+The ~5.5 minutes split in two.  The first ~1.5 minutes is the provisioning lead, launch to the first line of the
+bootstrap's log: EC2 provisioning, kernel, and cloud-init.  That is where the boot table's first stage lives, so
+it is counted once.  The remaining ~4 minutes is the warm-boot stages (next section).
+
+When capacity rebalancing pre-provisions a successor at the rebalance warning, usually from the other pool, that
+clock starts a couple of minutes before the notice even posts.  The fallback window comes in under five minutes.
+
+When the market has nothing at the warning, the launch waits for the reclaim.  The same clock starts at T+2:00 at
+the earliest, and the window runs eight and a half minutes, give or take.  The seventh reclaim shows how much
+later than that the market can make it.
+
+Zero-gap is a property of planned replacements.  A reclaim can never have it.  Launch-before-terminate needs a
+market that will sell you the second box while the first one still runs.  An interruption notice gives you two
+minutes in a market that just proved it wants the box back.
+
+The re-verify for this post caught the failure mode fresh.  On August 6, two reclaims four and a half hours apart
+ran the same sequence.  Each pair of numbers below is the first reclaim, then the second.
+
+```text
+notice posts     the two-minute clock starts.
+launch fails     on capacity, five times and then eight.
+launch sticks    2m45s and then 6m51s after the notice.  Until those
+                 marks the market refused to sell a box.
+boot runs        304 and then 244 seconds kernel to serving.  Ordinary
+                 by the boot table's own clock, both inside the band.
+serving starts   5m22s and then 4m19s after launch.  The windows close
+                 at 8m07s and then 11m10s, notice to serving.
+```
+
+The components sum from independent stamps, which is how you know the launch was the slow part and the boot was not.
+
+The August boxes also cut the fixed costs.  The provisioning lead ran ~15 seconds on one box and at most 18 on the
+other, against the ~1.5 minutes budgeted above.  The probes passed within seconds of the port opening.  The
+provisioning lead varies more than any boot stage, which is how a 4m19s launch-to-serving can contain a 244-second
+boot.
+
+The next morning, a third reclaim was replaced in seven seconds.  Same ASG, same configuration.  The only variable
+is whether spot has anything to sell at that minute.  The July 30 drought put a number on the alternative: an
+on-demand launch succeeded in under seven seconds in the same market where spot had been failing for 45 minutes.
 
 Post 2's failover threshold is 12 minutes precisely so that neither case looks like a drought: routine recovery, in
 either flavor, must never trigger a failover.  Six of the seven July reclaims stayed under that line.  The seventh
@@ -298,14 +320,19 @@ from token zero.  Warm, that is 211 milliseconds and invisible.  Cold, it is the
 architecture choice and the cold-start cost are the same fact seen twice.
 
 The arithmetic lands on exactly the wrong user.  A product with no traffic yet is a product made of quiet
-stretches, and the first real visitor after one is precisely who pays the 46 seconds.  Nothing on the box is broken
-while they wait.  The probe paid the full 46 because it used the sync path, whose budget is 90 seconds.  The
-streaming path is tighter.  Its first-token budget is 30 seconds, and the cold prompt eval measured 29.3.  A margin
-of 0.7 seconds means a slightly longer prompt on a cold box trips the budget and the request spills.  Not a 524,
-the next section's fixes hold.  A quality cost: the first visitor after a quiet stretch is the one most likely to
-get the fallback model's answer instead of the fine-tune's.  The ramp never exercised that near-miss, all its
-spills were the sync ceiling, so the streaming edge is arithmetic on measurements, not yet an observation.  No fix
-is deployed.  The obvious candidate is a scheduled self-prime through long idle, the same generate call the
+stretches, and the first real visitor after one is precisely who pays the 46 seconds.  Nothing on the box is
+broken while they wait.
+
+The probe paid the full 46 because it used the sync path, whose budget is 90 seconds.  The streaming path is
+tighter.  Its first-token budget is 30 seconds, and the cold prompt eval measured 29.3.  A margin of 0.7 seconds
+means a slightly longer prompt on a cold box trips the budget and the request spills.
+
+That spill is not a 524, the next section's fixes hold.  It is a quality cost: the first visitor after a quiet
+stretch is the one most likely to get the fallback model's answer instead of the fine-tune's.  The ramp never
+exercised that near-miss, all its spills were the sync ceiling, so the streaming edge is arithmetic on
+measurements, not yet an observation.
+
+No fix is deployed.  The obvious candidate is a scheduled self-prime through long idle, the same generate call the
 bootstrap already ends on.  For now, this section is the receipt that the cost is real and measured.
 
 ## The 100-second wall
