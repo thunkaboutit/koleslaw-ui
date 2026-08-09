@@ -162,18 +162,18 @@ T+2:00   the instance is gone.
 ```
 
 The replacement's clock is separate, and where it starts is what sets the window.  Launch to serving runs ~5.5
-minutes: ~1.5 minutes from launch to the first line of the bootstrap's log (EC2 provisioning, kernel, and
-cloud-init, so the boot table's first stage lives inside this figure and is counted once), then ~4 minutes for the
-remaining warm-boot stages (next section).  Traffic routes about a minute after that, once the NLB probes pass.
+minutes: a ~1.5-minute provisioning lead, launch to the first line of the bootstrap's log (EC2 provisioning,
+kernel, and cloud-init, so the boot table's first stage lives inside this figure and is counted once), then ~4
+minutes for the remaining warm-boot stages (next section).  Traffic routes about a minute after that, once the NLB probes pass.
 When capacity rebalancing pre-provisions a successor at the rebalance warning, usually from the other pool, that
 clock starts a couple of minutes before the notice even posts, and the fallback window comes in under five minutes.
 When the market has nothing at the warning, the launch waits for the reclaim, the same clock starts at T+2:00 at
 the earliest, and the window runs eight and a half minutes, give or take.  The seventh reclaim shows how much later
 than that the market can make it.
 
-Say the asymmetry plainly: zero-gap is a property of planned replacements, and a reclaim can never have it.
-Launch-before-terminate needs a market that will sell you the second box while the first one still runs.  An
-interruption notice gives you two minutes in a market that just proved it wants the box back.
+Zero-gap is a property of planned replacements.  A reclaim can never have it.  Launch-before-terminate needs a
+market that will sell you the second box while the first one still runs.  An interruption notice gives you two
+minutes in a market that just proved it wants the box back.
 
 The re-verify for this post caught the failure mode fresh.  On August 6, two reclaims four and a half hours apart
 ran the same sequence.  Each pair of numbers below is the first reclaim, then the second.
@@ -192,8 +192,9 @@ serving starts   5m22s and then 4m19s after launch.  The windows close
 The components sum from independent stamps, which is how you know the launch was the slow part and the boot was not.
 
 The August boxes also cut the fixed costs.  The provisioning lead ran ~15 seconds on one box and at most 18 on the
-other, against the ~1.5 minutes budgeted above.  The probes passed within seconds of the port opening.  The lead
-varies more than any boot stage, which is how a 4m19s launch-to-serving can contain a 244-second boot.
+other, against the ~1.5 minutes budgeted above.  The probes passed within seconds of the port opening.  The
+provisioning lead varies more than any boot stage, which is how a 4m19s launch-to-serving can contain a 244-second
+boot.
 
 The next morning, a third reclaim was replaced in seven seconds.  Same ASG, same configuration.  The only variable
 is whether spot has anything to sell at that minute.  The July 30 drought put a number on the alternative: an
