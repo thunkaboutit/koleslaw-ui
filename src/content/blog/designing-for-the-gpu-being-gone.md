@@ -1,27 +1,10 @@
 ---
 title: AWS reclaimed my only GPU seven times in 21 hours
 description: Spot can take the box behind the product with two minutes of notice. Seven reclaims in 21 hours proved out the six design decisions that make that boring.
-date: 2026-08-15
+date: 2026-08-08
 tags: [ aws, spot, gpu, resilience, koleslaw ]
-draft: true
+draft: false
 ---
-
-> Working draft.  Sixth pass: cp review round 6 applied 2026-08-08.
-> R1: drought-2 serving keyed to the named 20:59:31 generate-complete
-> stamp, figures now 4m19s and 11m10s, sums exact from named stamps.
-> R2: provisioning-lead variance disclosed (~15s and at most 18s
-> August vs ~1.5min July) in body and receipts.  R3: in-band wording.
-> R4: 294 receipt made self-contained.  R5: activity-history lookup
-> corrected the trigger tally to four interruption notices + two
-> rebalance swaps (the gather doc's "three reclaims" was itself
-> incomplete).  Comment armor at workspace
-> docs/hn-post3-comment-armor.md.  Title DECIDED (cp 2026-07-29):
-> "AWS reclaimed my only GPU seven times in 21 hours" doubles as the
-> HN title.  Slug deliberately stays designing-for-the-gpu-being-gone:
-> the URL keeps the search phrase the title gave up (outline §2.7).
-> This draft describes the deployment as of 2026-08-08.  Open before
-> publish: (1) flip draft:false, (2) set date to the actual publish
-> date (provenance ruling), (3) remove this note.
 
 In the 21 hours after spot went back on, AWS took the GPU behind [Koleslaw](https://koleslaw.ai) seven times.  The
 fleet is one instance.  Seven times, a fresh box booted, restored an ~18 GB model cache from S3, loaded it into VRAM,
