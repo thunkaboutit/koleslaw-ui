@@ -172,21 +172,32 @@ the earliest, and the window runs eight and a half minutes, give or take.  The s
 than that the market can make it.
 
 Say the asymmetry plainly: zero-gap is a property of planned replacements, and a reclaim can never have it.
-Launch-before-terminate needs a market that will sell you the second box while the first one still runs, and an
-interruption notice gives you two minutes in a market that just proved it wants the box back.  The re-verify for
-this post caught the failure mode fresh.  On August 6, two reclaims four and a half hours apart each watched the
-replacement launch fail on capacity, five times and then eight.  The market refused to sell a box for 2m45s and
-then 6m51s, notice to the launch that finally stuck.  The boots that followed were ordinary by the boot table's own
-clock, 304 and 244 seconds kernel to serving, both inside the band.  Launch to serving they ran 5m22s and 4m19s, so
-the windows closed at 8m07s and 11m10s notice to serving.  The components sum from independent stamps, which is how
-you know the launch was the slow part and the boot was not.  The August boxes also cut the fixed costs: the
-provisioning lead ran ~15 seconds on one box and at most 18 on the other, against the ~1.5 minutes the timeline
-above budgets, and the probes passed within seconds of the port opening.  The lead varies more than any boot stage,
-which is how a 4m19s launch-to-serving can contain a 244-second boot.  The next morning, a third reclaim was
-replaced in seven seconds.
-Same ASG, same configuration.  The only variable is whether spot has anything to sell at that minute, and the July
-30 drought put a number on the alternative: an on-demand launch succeeded in under seven seconds in the same market
-where spot had been failing for 45 minutes.
+Launch-before-terminate needs a market that will sell you the second box while the first one still runs.  An
+interruption notice gives you two minutes in a market that just proved it wants the box back.
+
+The re-verify for this post caught the failure mode fresh.  On August 6, two reclaims four and a half hours apart
+ran the same sequence.  Each pair of numbers below is the first reclaim, then the second.
+
+```text
+notice posts     the two-minute clock starts.
+launch fails     on capacity, five times and then eight.
+launch sticks    2m45s and then 6m51s after the notice.  Until those
+                 marks the market refused to sell a box.
+boot runs        304 and then 244 seconds kernel to serving.  Ordinary
+                 by the boot table's own clock, both inside the band.
+serving starts   5m22s and then 4m19s after launch.  The windows close
+                 at 8m07s and then 11m10s, notice to serving.
+```
+
+The components sum from independent stamps, which is how you know the launch was the slow part and the boot was not.
+
+The August boxes also cut the fixed costs.  The provisioning lead ran ~15 seconds on one box and at most 18 on the
+other, against the ~1.5 minutes budgeted above.  The probes passed within seconds of the port opening.  The lead
+varies more than any boot stage, which is how a 4m19s launch-to-serving can contain a 244-second boot.
+
+The next morning, a third reclaim was replaced in seven seconds.  Same ASG, same configuration.  The only variable
+is whether spot has anything to sell at that minute.  The July 30 drought put a number on the alternative: an
+on-demand launch succeeded in under seven seconds in the same market where spot had been failing for 45 minutes.
 
 Post 2's failover threshold is 12 minutes precisely so that neither case looks like a drought: routine recovery, in
 either flavor, must never trigger a failover.  Six of the seven July reclaims stayed under that line.  The seventh
