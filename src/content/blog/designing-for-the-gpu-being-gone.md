@@ -285,7 +285,7 @@ The other took 113 seconds for the same file on the same card class.  (The two Q
 argument, warmed in 127 and 128.)  So the fastest number in the table is real, and it is an outlier I cannot
 explain, not a card property.  All four numbers are true.  The one I would have quoted proudly is the one the rest
 of the data argues with.  The 37-second box, for what it is worth, was the incident morning's spot g6e, and AWS
-reclaimed it 20 minutes later.  Post 2 tells that one.
+reclaimed it 20 minutes later.  [Post 2](/blog/running-a-30b-model-on-spot-gpus) tells that one.
 
 The last piece is boring on purpose.  Ollama is version-pinned and installs from a tarball mirrored in the same S3
 bucket, an 11-second stage.  The serving-critical path pulls nothing from the public internet.  A boot that depends
@@ -543,7 +543,7 @@ reach.
   measurements.
 - The instance-type claim for the two Q8-era warm boots is an argument, not a lookup: a 33.6 GB blob does not fit
   either 24 GB pool, so both necessarily ran the 48 GB L40S (g6e).  The 08:26 box's type is independently
-  documented in post 2's incident anatomy.  The 37-second and 113-second warm deltas, and the 02:11 boot's
+  documented in [post 2's incident anatomy](/blog/running-a-30b-model-on-spot-gpus).  The 37-second and 113-second warm deltas, and the 02:11 boot's
   246-second serve, are from the same `BOOTSTAGE` pull as the table.
 - The 15-to-27-minute overlap band comes from the two live zero-gap refreshes on record: game day's flip to spot
   ran ~27 minutes launch to drain, and the July 22 autonomous re-arm overlapped old and new boxes for 15 minutes.
