@@ -448,6 +448,7 @@ replacements in roughly 32 hours across August 6 and 7, four of them spot interr
 swaps, and the card class went A10G to L4 and back.  The two drought replacements wrote their own `BOOTSTAGE`
 lines, 304 and 244 seconds kernel to serving, the boot table's own clock, both in band, on hardware and code the
 July arc never saw.
+
 Then the next box held the 12-hour load ramp, 428 requests, and spot left it alone.  Seven in 21 hours, six in 32,
 zero in 12.  The reclaim rate is the least predictable number in the system, and the design's job was never to
 predict it.
