@@ -55,7 +55,7 @@ register, you agree to provide accurate, current, and complete information and t
 You are responsible for maintaining the confidentiality of your account credentials, session tokens, and API keys. You
 are responsible for all activity that occurs under your account, whether or not you authorized it. This includes
 activity originating from the Site, the Extension, or direct API calls authenticated with your credentials. You agree to
-notify us immediately at cp@thunkabout.it if you become aware of any unauthorized use of your account or API key.
+notify us immediately at info@thunkabout.it if you become aware of any unauthorized use of your account or API key.
 
 ### 3.3 API Key Usage
 
@@ -289,7 +289,7 @@ fees) arising out of or related to:
 
 ### 13.1 Termination by You
 
-You may stop using the Service at any time. You may delete your account by contacting us at cp@thunkabout.it or
+You may stop using the Service at any time. You may delete your account by contacting us at info@thunkabout.it or
 through the account settings on the Site. If you use the Extension, you may uninstall it at any time, which will remove
 all locally stored Extension data. Uninstalling the Extension does not delete your account or any data stored on our
 servers — you must separately request account deletion if desired.
@@ -323,7 +323,7 @@ protection laws of your country of residence.
 ### 15.1 Informal Resolution
 
 Before filing any formal proceeding, you agree to attempt to resolve any dispute with us informally by contacting
-cp@thunkabout.it. We will attempt to resolve the dispute within 30 days of receiving your notice.
+info@thunkabout.it. We will attempt to resolve the dispute within 30 days of receiving your notice.
 
 ### 15.2 Binding Arbitration
 
@@ -391,7 +391,7 @@ should be sent to:
 3080 Monroe Way
 Alpharetta, GA 30004
 United States of America
-Email: cp@thunkabout.it
+Email: info@thunkabout.it
 
 ---
 
@@ -409,6 +409,6 @@ Terms constitutes your acceptance of the changes.
 
 If you have questions about these Terms, contact us at:
 
-**Email:** cp@thunkabout.it
+**Email:** info@thunkabout.it
 
 ---
