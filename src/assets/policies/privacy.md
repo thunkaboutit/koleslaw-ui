@@ -1,6 +1,6 @@
 # Koleslaw — Privacy Policy
 
-**Last updated:** March 31, 2026
+**Last updated:** August 20, 2026
 
 ## Overview
 
@@ -23,10 +23,10 @@ The data controller for this Service is:
 3080 Monroe Way
 Alpharetta, GA 30004
 United States of America
-Email: legal@thunkabout.it
+Email: info@thunkabout.it
 
 If you are in the European Economic Area (EEA) and wish to contact our representative, please
-email: cp@thunkabout.it
+email: info@thunkabout.it
 
 ## Data Collected
 
@@ -35,9 +35,16 @@ The Service collects and processes the following categories of data:
 - **Prompts and context** you enter into the Site's chat box, the Extension's popup interface, or submit directly
   through the API. Under the California Consumer Privacy Act (CCPA), this falls within the category of "Internet or
   other electronic network activity information."
+- **Draft prompts on supported AI chat sites** (Extension only). On chatgpt.com, chat.openai.com, claude.ai, and
+  gemini.google.com the Extension shows an "Enhance" button. Only when you click it does the Extension read the text
+  currently in that site's prompt box, send it to `api.koleslaw.ai` for enhancement, and replace it with the enhanced
+  version. The Extension does not read any other content on those pages and is not active on any other website.
 - **Selected text** from web pages (Extension only), captured only when you explicitly click "Use Selection" or use
   the "Enhance with Koleslaw" context menu. This text is placed into the prompt input field and is not sent anywhere
   until you click "Enhance."
+- **Usage records** for requests authenticated with an API key: the timestamp, the model that served the request,
+  the enhancement type, input and output token counts, whether the response came from cache, and latency. Usage
+  records never include the prompt text itself. They power your usage dashboard and enforce plan limits.
 - **Account information** (if applicable), such as your email address, username, or other information you provide when
   creating an account on the Site or obtaining an API key. Under the CCPA, this falls within the category of "
   Identifiers."
@@ -67,6 +74,8 @@ Your data is used solely for the following purposes:
 - **Account information** is used to authenticate your access, manage your subscription or usage tier, and communicate
   with you about the Service.
 - **API keys** are used solely to authenticate requests to `api.koleslaw.ai`.
+- **Usage records** are used to show you your own usage, enforce the daily limits of your plan, and, for paid plans,
+  support billing.
 - **Incidental technical data** is used only for request routing, rate limiting, abuse prevention, and distinguishing
   traffic sources for operational monitoring.
 - **Cookies** (Site only) are used solely to maintain session state and remember your preferences.
@@ -90,8 +99,9 @@ We process your data on the following legal bases under the EU General Data Prot
 
 ## Data Storage
 
-- **Extension local storage:** Your API key, API URL, and most recent prompt are stored locally on your device using
-  Chrome's `chrome.storage.local` API. This data is not transmitted to any third party other than `api.koleslaw.ai`.
+- **Extension local storage:** Your API key, API URL, and most recent prompt and context are stored locally on your
+  device using Chrome's `chrome.storage.local` API. This data is not transmitted to any third party other than
+  `api.koleslaw.ai`.
   Chrome's local storage is not encrypted at rest; anyone with physical access to your device and Chrome profile may be
   able to view stored Extension data.
 - **Site session data:** Session tokens and preferences are stored in your browser using cookies or session storage.
@@ -104,15 +114,17 @@ We process your data on the following legal bases under the EU General Data Prot
 - **Extension local storage:** Your API key, API URL, and most recent prompt remain stored on your device until you
   clear them in the Extension's settings or uninstall the Extension. Uninstalling the Extension removes all locally
   stored data.
-- **Site session data:** Session data expires automatically after [X hours/days] of inactivity or upon logout.
+- **Site session data:** Sign-in sessions expire 7 days after sign-in, or immediately upon logout.
 - **API-side caching:** Prompts sent to `api.koleslaw.ai` — regardless of whether they originate from the Site, the
-  Extension, or a direct API call — may be cached on our servers for up to [X hours/days] solely to reduce response
+  Extension, or a direct API call — may be cached on our servers for up to 24 hours solely to reduce response
   latency. Cached data is automatically purged after this period and is not used for model training or any other
   purpose.
-- **Account data:** If you have an account, your account information is retained for as long as your account is active.
-  Upon account deletion, your account data is removed within [X days].
+- **Account data:** If you have an account, your account information and usage records are retained for as long as
+  your account is active. You can delete your account yourself at any time from the Profile page on the Site.
+  Deletion is immediate and permanent: the account, all of its API keys, and all of its usage records are deleted at
+  that moment.
 - **Incidental technical data:** IP addresses and request metadata used for rate limiting and abuse prevention are
-  retained for up to [X days] and then automatically deleted.
+  retained for up to 30 days and then automatically deleted.
 - **No long-term prompt retention:** We do not retain your prompts, context, or selected text beyond the caching period
   described above.
 
@@ -121,16 +133,22 @@ We process your data on the following legal bases under the EU General Data Prot
 All prompt data — whether submitted from the Site, the Extension, or the API — is processed by the same backend at
 `api.koleslaw.ai`.
 
-**Default processing path:** The Koleslaw API is hosted by [cloud provider name] in [location/region]. The following
-sub-processors may handle your data in the course of providing the Service:
+**Default processing path:** The Koleslaw API is hosted by Amazon Web Services in the US East (Ohio) region
+(`us-east-2`). Prompt enhancement is performed primarily by Koleslaw's own fine-tuned model running on infrastructure
+we operate in that same AWS region. On that path, no third-party AI provider receives your prompt. When our own model
+is unavailable, starting up, or busy beyond a response-time limit, the request is instead processed by a fallback model
+from Anthropic through the Anthropic API.
 
-| Sub-Processor                 | Purpose                       | Location                  |
-| ----------------------------- | ----------------------------- | ------------------------- |
-| [Cloud provider, e.g., AWS]   | Infrastructure hosting        | [Region, e.g., US-East-1] |
-| [LLM provider, if applicable] | Prompt enhancement processing | [Region]                  |
+The following sub-processors may handle your data in the course of providing the Service:
 
-A current list of sub-processors is maintained at [URL] and updated at least 30 days before any new sub-processor is
-engaged.
+| Sub-Processor            | Purpose                                                                                                                                                                  | Location                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| Amazon Web Services, Inc. | Infrastructure hosting: API, database, cache, and the servers that run our own enhancement model                                                                        | United States (`us-east-2`, Ohio)   |
+| Anthropic, PBC           | Fallback prompt enhancement processing, only when our own model cannot serve the request                                                                                  | United States                       |
+| Stripe, Inc.             | Payment processing for paid plans. Card details are entered on Stripe-hosted pages and never reach our servers; we store only your Stripe customer and subscription IDs | United States                       |
+
+This section is the current list of sub-processors. We will update it at least 30 days before engaging a new
+sub-processor.
 
 **Custom API endpoints (Extension only):** The Extension allows you to configure a custom API URL. If you do so, your
 prompts will be sent to that third-party endpoint instead of `api.koleslaw.ai`. We have no control over how third-party
@@ -145,12 +163,13 @@ personal information.
 
 ## International Data Transfers
 
-The Koleslaw API is hosted in [country/region]. If you are located in the European Economic Area (EEA), the United
-Kingdom, or Switzerland, your data may be transferred to and processed in a country outside your jurisdiction. We rely
-on [Standard Contractual Clauses (SCCs) approved by the European Commission / an adequacy decision / other lawful transfer mechanism]
-to ensure that your data receives adequate protection in accordance with GDPR Articles 44–49.
+The Koleslaw API is hosted in the United States (AWS `us-east-2`). If you are located in the European Economic Area
+(EEA), the United Kingdom, or Switzerland, your data is transferred to and processed in the United States. For these
+transfers we rely on your explicit consent (GDPR Art. 49(1)(a)), given when you submit a prompt or create an account,
+and on the data processing terms of our sub-processors, which incorporate the European Commission's Standard
+Contractual Clauses, in accordance with GDPR Articles 44–49.
 
-You may request a copy of the applicable transfer safeguards by contacting us at cp@thunkabout.it.
+You may request a copy of the applicable transfer safeguards by contacting us at info@thunkabout.it.
 
 ## Security
 
@@ -171,7 +190,7 @@ rest. We recommend that you secure your device with a strong password and keep y
 ## Your Rights
 
 Depending on your location, you have rights regarding your personal data as described below. To exercise any of these
-rights, contact us at cp@thunkabout.it with a description of your request. We may need to verify your identity before
+rights, contact us at info@thunkabout.it with a description of your request. We may need to verify your identity before
 fulfilling your request.
 
 ### For All Users
@@ -212,14 +231,14 @@ requests on your behalf.
 ### For Residents of Other US States
 
 If you reside in Virginia, Colorado, Connecticut, or another state with an applicable consumer privacy law, you may have
-similar rights to those described above. Contact us at cp@thunkabout.it, and we will process your request in
+similar rights to those described above. Contact us at info@thunkabout.it, and we will process your request in
 accordance with applicable law.
 
 ## Children's Privacy
 
 This Service is not directed at children under the age of 16. We do not knowingly collect personal data from children
 under 16. If you believe that a child under 16 has provided us with personal data through the Site, the Extension, or
-the API, please contact us at cp@thunkabout.it and we will promptly delete it.
+the API, please contact us at info@thunkabout.it and we will promptly delete it.
 
 ## Healthcare Data Disclaimer
 
@@ -235,6 +254,12 @@ The Extension requests the following browser permissions:
 - **scripting** — to execute a script that reads your text selection on the active tab
 - **storage** — to persist your settings and most recent prompt locally on your device
 - **contextMenus** — to add the "Enhance with Koleslaw" right-click menu option
+- **Host permission for `api.koleslaw.ai`** — to send your enhancement requests to the Koleslaw API from the
+  Extension's background process
+- **Content scripts on chatgpt.com, chat.openai.com, claude.ai, and gemini.google.com** — to show the in-page
+  "Enhance" button on those sites and, only when you click it, read the draft prompt in that site's input box and
+  replace it with the enhanced version. The Extension reads nothing else on those pages and does not run on any
+  other website.
 
 These permissions apply only to the Chrome extension. The Site does not require or request browser-level permissions
 beyond standard web functionality.
@@ -251,7 +276,7 @@ effect constitutes your acceptance of the updated policy.
 
 If you have questions about this privacy policy or wish to exercise your data rights, contact us at:
 
-**Email:** cp@thunkabout.it
+**Email:** info@thunkabout.it
 
 If you are in the EEA and are not satisfied with our response, you have the right to lodge a complaint with your local
 data protection supervisory authority.
