@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import mascotSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
 import logoSrc from '@/assets/koleslaw-logo-woof-bubble.svg'
 import EnhancePanel from '@/components/EnhancePanel.vue'
+import { CHROME_STORE_URL } from '@/config/site'
 
 const isSubmitting = ref(false)
 
@@ -123,6 +124,12 @@ function setSectionRef(idx: number) {
             Koleslaw takes your rough prompt and turns it into exactly what AI needs to hear. Better
             input, better output — it's not rocket science. It's a barking cow.
           </p>
+          <div class="hero__cta">
+            <a :href="CHROME_STORE_URL" target="_blank" rel="noopener" class="hero__cta-btn">
+              Get the Chrome extension
+            </a>
+            <span class="hero__cta-note">Enhance in place on ChatGPT, Claude, and Gemini.</span>
+          </div>
           <div class="hero__flow">
             <div class="flow-step">
               <span class="flow-step__icon flow-step__icon--rough" aria-hidden="true">
@@ -404,6 +411,43 @@ function setSectionRef(idx: number) {
   max-width: 440px;
 }
 
+/* ─── Chrome CTA ─── */
+.hero__cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.hero__cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius);
+  background: var(--color-primary);
+  color: var(--wl-cream);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.hero__cta-btn:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+.hero__cta-note {
+  font-size: 0.8125rem;
+  color: var(--wl-warm-gray);
+}
+
 /* ─── Process Flow ─── */
 .hero__flow {
   display: flex;
@@ -507,6 +551,10 @@ function setSectionRef(idx: number) {
   .hero__flow {
     justify-content: center;
     flex-wrap: wrap;
+  }
+
+  .hero__cta {
+    justify-content: center;
   }
 
   .hero__title {
