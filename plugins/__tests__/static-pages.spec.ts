@@ -139,6 +139,21 @@ describe('sitePages', () => {
     expect(meta.image).toBe('https://koleslaw.ai/og/quantization.png')
   })
 
+  it('carries a declared update into the post head and its structured data', () => {
+    const baked = page(
+      'blog/quantization.html',
+      sources({ posts: [post({ updated: '2026-08-17' })] }),
+    )
+    const posting = baked.jsonLd.find((node) => node['@type'] === 'BlogPosting')
+
+    expect(baked.meta.modifiedTime).toBe('2026-08-17')
+    expect(posting?.['dateModified']).toBe('2026-08-17')
+  })
+
+  it('leaves the modified key off a post that declares no update', () => {
+    expect('modifiedTime' in page('blog/quantization.html').meta).toBe(false)
+  })
+
   it('gives every body exactly one h1 and closes it with links to every public page', () => {
     for (const baked of sitePages(sources())) {
       const document = parse(baked.body)

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import BlogPostPage from '../BlogPostPage.vue'
@@ -19,13 +19,14 @@ vi.mock('@/content/posts', async (importOriginal) => {
 
   // Timeline, oldest first: oldest, part-one, part-two, middle, newest. The
   // series sits inside the run of standalone posts on purpose, so chronological
-  // navigation has to step through it.
+  // navigation has to step through it. `middle` is the one revised post: an
+  // update must change what it says without moving it in the chronology.
   const posts = actual.buildPosts(
     Object.fromEntries([
       source('oldest', '2026-08-01'),
       source('part-one', '2026-08-04', 'series: A series\npart: 1\n'),
       source('part-two', '2026-08-05', 'series: A series\npart: 2\n'),
-      source('middle', '2026-08-08'),
+      source('middle', '2026-08-08', 'updated: 2026-08-17\n'),
       source('newest', '2026-08-15'),
     ]),
   )
@@ -61,6 +62,48 @@ function links(wrapper: Awaited<ReturnType<typeof mountPost>>): string[] {
     .map((link) => link.attributes('href') ?? '')
     .filter((href) => href !== '')
 }
+
+function dates(wrapper: Awaited<ReturnType<typeof mountPost>>): (string | undefined)[] {
+  return wrapper.findAll('.post-page__meta time').map((node) => node.attributes('datetime'))
+}
+
+function headContent(key: string): string | null | undefined {
+  return document.head.querySelector(`meta[property="${key}"]`)?.getAttribute('content')
+}
+
+// useSeo only clears its tags on unmount, and these mounts outlive their test.
+beforeEach(() => {
+  document.head.innerHTML = ''
+})
+
+describe('BlogPostPage dates', () => {
+  it('prints a declared update beside the publish date, each in its own time', async () => {
+    const wrapper = await mountPost('middle')
+
+    expect(dates(wrapper)).toEqual(['2026-08-08', '2026-08-17'])
+    expect(wrapper.find('.post-page__meta').text()).toBe('8 August 2026 · Updated 17 August 2026')
+  })
+
+  it('prints the publish date alone when the post declares no update', async () => {
+    const wrapper = await mountPost('newest')
+
+    expect(dates(wrapper)).toEqual(['2026-08-15'])
+    expect(wrapper.find('.post-page__meta').text()).toBe('15 August 2026')
+  })
+
+  it('publishes the declared update as article:modified_time', async () => {
+    await mountPost('middle')
+
+    expect(headContent('article:published_time')).toBe('2026-08-08')
+    expect(headContent('article:modified_time')).toBe('2026-08-17')
+  })
+
+  it('stamps no modified time for a post that declares no update', async () => {
+    await mountPost('newest')
+
+    expect(document.head.querySelector('meta[property="article:modified_time"]')).toBeNull()
+  })
+})
 
 describe('BlogPostPage navigation', () => {
   it('offers both neighbours on a standalone post, series posts included', async () => {

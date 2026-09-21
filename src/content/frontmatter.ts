@@ -15,6 +15,8 @@ export interface PostFrontmatter {
   description: string
   /** ISO date, YYYY-MM-DD. */
   date: string
+  /** ISO date, YYYY-MM-DD, of the last substantive edit. Absent until the author declares one. */
+  updated?: string
   /** Series name, when the post is part of one. */
   series?: string
   /** 1-based position within `series`. */
@@ -102,6 +104,20 @@ export function parsePost(raw: string, where = 'post'): ParsedPost {
     throw new Error(`${where}: date must be YYYY-MM-DD, got "${date}"`)
   }
 
+  // An edit cannot predate the writing. A typo here would publish a dateModified
+  // older than datePublished, which is the kind of contradiction that gets
+  // structured data ignored, so it fails the build instead. Plain string
+  // comparison is exact for fixed-width ISO dates and drags in no timezone.
+  const updated = fields['updated']
+  if (updated !== undefined) {
+    if (typeof updated !== 'string' || !ISO_DATE.test(updated)) {
+      throw new Error(`${where}: updated must be YYYY-MM-DD, got "${String(updated)}"`)
+    }
+    if (updated < date) {
+      throw new Error(`${where}: updated ${updated} is earlier than date ${date}`)
+    }
+  }
+
   const series = fields['series']
   const part = fields['part']
   if (series !== undefined && typeof part !== 'number') {
@@ -116,6 +132,7 @@ export function parsePost(raw: string, where = 'post'): ParsedPost {
       title: requireString(fields, 'title', where),
       description: requireString(fields, 'description', where),
       date,
+      ...(typeof updated === 'string' ? { updated } : {}),
       ...(typeof series === 'string' ? { series } : {}),
       ...(typeof part === 'number' ? { part } : {}),
       tags: Array.isArray(tags) ? tags : [],

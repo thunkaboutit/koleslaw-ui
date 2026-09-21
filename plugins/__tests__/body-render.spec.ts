@@ -141,6 +141,22 @@ describe('renderPostBody', () => {
     expect(doc.querySelector('a[href="/blog"]')).not.toBeNull()
   })
 
+  it('prints a declared update beside the publish date, each in its own time', () => {
+    const html = renderPostBody({ post: post({ updated: '2026-08-17' }), html: '', others: [] })
+    const times = [...parse(html).querySelectorAll('article time')]
+
+    expect(times.map((node) => node.getAttribute('datetime'))).toEqual(['2026-07-29', '2026-08-17'])
+    expect(times[0]?.parentElement?.textContent).toBe('29 July 2026 · Updated 17 August 2026')
+  })
+
+  it('prints the publish date alone when the post declares no update', () => {
+    const html = renderPostBody({ post: post(), html: '', others: [] })
+    const times = [...parse(html).querySelectorAll('article time')]
+
+    expect(times).toHaveLength(1)
+    expect(times[0]?.parentElement?.textContent).toBe('29 July 2026')
+  })
+
   it('escapes the title rather than trusting it', () => {
     const html = renderPostBody({ post: post(), html: '', others: [] })
 
