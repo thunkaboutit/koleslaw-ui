@@ -17,7 +17,11 @@ server {
     gzip_min_length 256;
 
     # Cache static assets aggressively (hashed filenames from Vite)
-    location /assets/ {
+    #
+    # "^~" because a regex location outranks a plain prefix one whatever the
+    # order: without it the .html redirect below would reach in here and bounce
+    # a hashed asset that happens to be HTML instead of serving it.
+    location ^~ /assets/ {
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
@@ -26,8 +30,10 @@ server {
     #
     # These two keep their own locations partly so the trailing-slash rewrite
     # below cannot touch them: the API's MCP endpoint is /v1/mcp/ and needs its
-    # slash.
-    location /auth/ {
+    # slash. "^~" extends that to the .html redirect below, which as a regex
+    # would otherwise outrank these prefixes. What a backend URL means is the
+    # backend's business, not this server's.
+    location ^~ /auth/ {
         resolver 127.0.0.11 valid=10s;
         set $backend ${API_UPSTREAM};
         proxy_pass $backend;
@@ -37,7 +43,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location /v1/ {
+    location ^~ /v1/ {
         resolver 127.0.0.11 valid=10s;
         set $backend ${API_UPSTREAM};
         proxy_pass $backend;
@@ -62,6 +68,31 @@ server {
     # check: plugins/__tests__/nginx-routes.spec.ts is what keeps the two in step.
     location ~ ^/(blog|pricing|contact|terms|privacy|login|signup|chat|dashboard|keys|profile)$ {
         try_files $uri.html /index.html;
+    }
+
+    # The baked pages are files on disk, so every one of them was reachable
+    # under its own name too: /pricing.html answered the same 200 as /pricing.
+    # A second URL per page is the duplication the canonical tags exist to paper
+    # over. Send the file name to the URL the page is served at and there is one.
+    #
+    # None of this can catch a request try_files has already resolved: only the
+    # LAST try_files parameter re-enters location matching, so /pricing still
+    # gets pricing.html served in place rather than looping back through here.
+    location = /index.html {
+        # Not a page: this is the neutral shell nginx hands out for app routes
+        # and as the body of every 404. "internal" is what lets it stay both —
+        # try_files fallbacks and error_page still reach it, and an exact match
+        # outranks the regex below, while a request from outside gets the same
+        # 404 as any other URL the site does not serve.
+        internal;
+    }
+
+    location = /home.html {
+        return 301 /;               # the home page's URL is "/"; /home is nothing
+    }
+
+    location ~ ^/(.+)\.html$ {
+        return 301 /$1;             # /pricing.html -> /pricing
     }
 
     # Everything else is a real file, a build-time page, or nothing at all.
