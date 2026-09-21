@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { readdirSync, readFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createMarkdownRenderer } from '../markdown'
 import { useMarkdown } from '../../composables/useMarkdown'
 
@@ -34,6 +37,25 @@ describe('createMarkdownRenderer', () => {
     expect(html).toContain('if (a &lt; b) &amp; &quot;quoted&quot;')
   })
 
+  it('carries only the languages the site writes in, not all of highlight.js', () => {
+    // Rust is a real highlight.js language. If it highlights here, the full
+    // 190-language build is back in the bundle: about 350 KB gzipped on the home
+    // page, to colour a playground that has not rendered anything yet.
+    const html = createMarkdownRenderer().render('```rust\nfn main() {}\n```\n')
+
+    expect(html).toContain('<pre class="hljs"><code>fn main() {}')
+    expect(html).not.toContain('hljs-keyword')
+  })
+
+  it.each(['bash', 'python', 'json', 'javascript', 'typescript', 'yaml', 'sql', 'text'])(
+    'highlights a %s fence',
+    (lang) => {
+      const html = createMarkdownRenderer().render(`\`\`\`${lang}\nx = 1\n\`\`\`\n`)
+
+      expect(html).toContain(`<pre class="hljs"><code class="language-${lang}">`)
+    },
+  )
+
   it('linkifies bare URLs', () => {
     const html = createMarkdownRenderer().render('See https://koleslaw.ai for more.\n')
 
@@ -62,5 +84,48 @@ describe('useMarkdown', () => {
     const { renderMarkdown } = useMarkdown()
 
     expect(renderMarkdown(SAMPLE)).toBe(createMarkdownRenderer().render(SAMPLE))
+  })
+})
+
+describe('the fences the site really uses', () => {
+  // jsdom resolves `new URL(relative, import.meta.url)` against the document, so
+  // the repo root is worked out from the file path instead.
+  const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
+  const SOURCES = ['src/content/blog', 'src/assets/policies']
+
+  /** highlight.js ships no grammar for these at all, so they were never coloured. */
+  const NEVER_HIGHLIGHTED = ['hcl']
+
+  function fenceLanguages(): string[] {
+    const found = SOURCES.flatMap((dir) =>
+      readdirSync(join(ROOT, dir))
+        .filter((name) => name.endsWith('.md'))
+        .flatMap((name) => {
+          const markdown = readFileSync(join(ROOT, dir, name), 'utf8')
+          return [...markdown.matchAll(/^```([\w-]+)/gm)].map((match) => match[1] ?? '')
+        }),
+    )
+    return [...new Set(found)].sort()
+  }
+
+  /**
+   * The renderer registers languages one by one, so a post that opens a fence in
+   * a new one ships unhighlighted with no error anywhere. This is the error.
+   */
+  it('are all registered in src/content/markdown.ts', () => {
+    const renderer = createMarkdownRenderer()
+    const unhighlighted = fenceLanguages()
+      .filter((lang) => !NEVER_HIGHLIGHTED.includes(lang))
+      .filter(
+        (lang) =>
+          !renderer.render(`\`\`\`${lang}\nx\n\`\`\`\n`).includes(`class="language-${lang}"`),
+      )
+
+    // Fix: import the grammar in src/content/markdown.ts and add it to LANGUAGES.
+    expect(unhighlighted).toEqual([])
+  })
+
+  it('include at least one fence, so the check above is not vacuous', () => {
+    expect(fenceLanguages()).toContain('text')
   })
 })
