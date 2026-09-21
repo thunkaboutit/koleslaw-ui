@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { usePageSeo } from '@/composables/useSeo'
 import { BILLING_PORTAL_LOGIN_URL, proCheckoutUrl } from '@/config/billing'
+
+const page = usePageSeo('pricing')
 
 const auth = useAuthStore()
 
@@ -11,7 +14,7 @@ const checkoutUrl = computed(() => (auth.user ? proCheckoutUrl(auth.user.id, aut
 
 <template>
   <div class="pricing-page">
-    <h1>Pricing</h1>
+    <h1>{{ page.heading }}</h1>
     <p class="pricing__sub">Start free. Upgrade when you outgrow the limits.</p>
 
     <div class="pricing__grid">

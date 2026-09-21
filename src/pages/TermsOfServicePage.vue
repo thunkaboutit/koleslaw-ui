@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useMarkdown } from '@/composables/useMarkdown'
+import { usePageSeo } from '@/composables/useSeo'
 import termsRaw from '@/assets/policies/terms.md?raw'
+
+const page = usePageSeo('terms')
 
 const { renderMarkdown } = useMarkdown()
 
@@ -43,7 +46,7 @@ async function downloadPdf() {
 <template>
   <div class="policy-page">
     <div class="policy-header">
-      <h1>Terms of Service</h1>
+      <h1>{{ page.heading }}</h1>
       <button
         class="download-btn"
         aria-label="Download Terms of Service as PDF"

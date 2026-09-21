@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 #
-# Verify that a real production container serves the blog's build-time pages.
+# Verify the routing contract a real production container serves.
 #
-# The whole social-unfurl design rests on one nginx line: try_files puts
-# $uri.html ahead of $uri/, so /blog/<slug> serves the generated
-# dist/blog/<slug>.html with its own title and Open Graph tags instead of the
-# generic SPA shell. Build output on disk proves the files exist; only a running
-# container proves they are reachable at the canonical URL.
+# Three promises have to hold at once, and only a running container can show it:
+#
+#   * a shared post URL serves its own build-time page, because try_files puts
+#     $uri.html ahead of the SPA shell — the whole social-unfurl design rests on
+#     that one line;
+#   * a URL the app does not serve answers 404, not 200 plus the shell. A soft
+#     404 makes the site an infinite set of duplicate pages to a crawler;
+#   * a trailing slash redirects to the canonical URL, relatively. nginx listens
+#     on plain :80 behind Cloudflare and the ALB, so an absolute Location would
+#     hand the client http:// and the wrong host and port.
+#
+# Build output on disk proves the files exist; only a running container proves
+# they are reachable at the canonical URL, and that everything else is not.
 #
 # Builds the image, boots it, asserts, and cleans up after itself. A temporary
 # fixture post is written into src/content/blog so the check does not depend on
@@ -33,10 +41,11 @@ FIXTURE="${REPO_ROOT}/src/content/blog/${SLUG}.md"
 DRAFT_FIXTURE="${REPO_ROOT}/src/content/blog/${DRAFT_SLUG}.md"
 WORK="$(mktemp -d)"
 BODY="${WORK}/body"
+HEADERS="${WORK}/headers"
 
 failures=0
 status=''
-redirect=''
+location=''
 
 cleanup() {
   rm -f "$FIXTURE" "$DRAFT_FIXTURE"
@@ -52,10 +61,12 @@ bad() {
 }
 
 fetch() {
-  local meta
-  meta="$(curl -sS -o "$BODY" -w '%{http_code} %{redirect_url}' "${BASE}${1}")"
-  status="${meta%% *}"
-  redirect="${meta#* }"
+  status="$(curl -sS -o "$BODY" -D "$HEADERS" -w '%{http_code}' "${BASE}${1}")"
+  # The raw header, not curl's %{redirect_url}: curl resolves a relative
+  # Location against the request URL and hands back an absolute one, which would
+  # hide the very thing the redirect has to get right behind a TLS-terminating
+  # proxy on another port.
+  location="$(sed -n 's/^[Ll]ocation: //p' "$HEADERS" | tr -d '\r')"
 }
 
 expect_status() {
@@ -63,15 +74,58 @@ expect_status() {
 }
 
 expect_no_redirect() {
-  if [ -z "$redirect" ]; then ok 'no redirect'; else bad "redirected to $redirect"; fi
+  if [ -z "$location" ]; then ok 'no redirect'; else bad "redirected to $location"; fi
+}
+
+expect_redirect() {
+  if [ "$location" = "$1" ]; then ok "Location: $1"; else bad "Location is '${location}', want '$1'"; fi
+
+  # Spelled out separately from the equality above because this is the part a
+  # future edit is most likely to break: absolute_redirect off, always.
+  case "$location" in
+    '') ;; # nothing to judge, and the equality above has already failed
+    *http*) bad "Location leaks a scheme: $location" ;;
+    *:*) bad "Location leaks a host or port: $location" ;;
+    *) ok 'Location stays relative' ;;
+  esac
 }
 
 expect_contains() {
   if grep -qF -- "$1" "$BODY"; then ok "contains: $1"; else bad "missing: $1"; fi
 }
 
+# index.html is what app routes and every 404 are served. If a page's content is
+# ever baked into it, a login screen and a not-found page both open on that text.
+expect_neutral_shell() {
+  expect_missing 'class="prerendered"'
+  expect_missing 'rel="canonical"'
+}
+
+# A public page: its own head, its structured data, and its text in the body,
+# all in the HTML as served, which is all a crawler that runs no scripts gets.
+serves_baked() {
+  fetch "$1"
+  expect_status 200
+  expect_no_redirect
+  expect_contains "<title>$2</title>"
+  expect_contains "<link rel=\"canonical\" href=\"https://koleslaw.ai$1\">"
+  expect_contains '<script type="application/ld+json">'
+  expect_contains '<main class="prerendered"'
+  expect_contains "<h1>$3</h1>"
+}
+
 expect_missing() {
   if grep -qF -- "$1" "$BODY"; then bad "should not contain: $1"; else ok "absent: $1"; fi
+}
+
+serves_shell() {
+  fetch "$1"
+  if [ "$status" = '200' ] && grep -qF "<title>${SHELL_TITLE}</title>" "$BODY"; then
+    ok "${1} serves the SPA shell"
+  else
+    bad "${1} returned ${status} and did not serve the SPA shell"
+  fi
+  expect_neutral_shell
 }
 
 # --- fixtures -----------------------------------------------------------------
@@ -149,6 +203,12 @@ expect_contains '<meta property="og:image" content="https://koleslaw.ai/og/defau
 expect_contains '<meta name="twitter:card" content="summary_large_image">'
 expect_missing "<title>${SHELL_TITLE}</title>"
 
+echo "==> and the article itself, in the served HTML"
+expect_contains '"@type":"BlogPosting"'
+expect_contains '<main class="prerendered"'
+expect_contains "<h1>${TITLE}</h1>"
+expect_contains 'Fixture body.'
+
 echo "==> the card art the tags point at is really there"
 fetch '/og/default.png'
 expect_status 200
@@ -166,31 +226,91 @@ expect_status 200
 expect_no_redirect
 expect_contains '<title>The Koleslaw Blog — koleslaw.ai</title>'
 expect_contains '<link rel="canonical" href="https://koleslaw.ai/blog">'
+expect_contains '"@type":"Blog"'
+expect_contains "<a href=\"/blog/${SLUG}\">${TITLE}</a>"
+expect_missing "$DRAFT_SLUG"
 
-# --- scenario: unknown blog URLs still reach the SPA --------------------------
+# --- scenario: URLs the app does not serve are real 404s ----------------------
+#
+# The body is still the shell, so the SPA boots and renders its own not-found
+# page; the status is what tells a crawler the page is not there.
 
-echo "==> unknown blog URLs still reach the SPA"
+echo "==> an unknown URL is a real 404"
+fetch '/definitely-not-a-page'
+expect_status 404
+expect_contains "<title>${SHELL_TITLE}</title>"
+expect_neutral_shell
+
+echo "==> unknown blog URLs are real 404s"
 fetch '/blog/does-not-exist'
-expect_status 200
+expect_status 404
 expect_contains "<title>${SHELL_TITLE}</title>"
 expect_missing 'rel="canonical"'
 
 echo "==> drafts get no generated page"
 fetch "/blog/${DRAFT_SLUG}"
-expect_status 200
+expect_status 404
 expect_contains "<title>${SHELL_TITLE}</title>"
 expect_missing 'rel="canonical"'
 
-# --- scenario: existing routes are unaffected ---------------------------------
+# A stale hashed asset and a missing image are the cases where answering 200
+# with HTML is worst: the browser gets a script or a picture that parses as a
+# web page.
+echo "==> a missing file is a 404, not HTML with a 200"
+fetch '/assets/nope-12345.js'
+expect_status 404
+fetch '/og/nope-12345.png'
+expect_status 404
 
-echo "==> existing routes are unaffected"
-for path in '/' '/pricing' '/privacy' '/contact' '/terms' '/login'; do
-  fetch "$path"
-  if [ "$status" = '200' ] && grep -qF "<title>${SHELL_TITLE}</title>" "$BODY"; then
-    ok "${path} serves the SPA shell"
-  else
-    bad "${path} returned ${status} and did not serve the SPA shell"
-  fi
+# A directory has to miss outright. If try_files ever matched one, nginx would
+# redirect it to the trailing-slash form, which the rewrite above sends straight
+# back: a redirect loop for any crawler that finds the URL.
+echo "==> a directory with no index page is a 404, not a redirect"
+fetch '/og'
+expect_status 404
+expect_no_redirect
+
+# --- scenario: a trailing slash redirects to the canonical URL ----------------
+
+echo "==> a trailing slash redirects, relatively"
+fetch '/blog/'
+expect_status 301
+expect_redirect '/blog'
+
+fetch '/pricing/'
+expect_status 301
+expect_redirect '/pricing'
+
+fetch "/blog/${SLUG}/"
+expect_status 301
+expect_redirect "/blog/${SLUG}"
+
+# The rewrite lives inside `location /` alone, so a URL claimed by a prefix
+# location keeps its slash. That is load-bearing for the proxied ones: the API's
+# MCP endpoint is /v1/mcp/ and answers nothing without the slash. /assets/
+# stands in for them, since this container has no API behind it to talk to.
+echo "==> a prefix location keeps its trailing slash"
+fetch '/assets/'
+expect_no_redirect
+
+# --- scenario: public pages are prerendered, app routes are not ---------------
+
+# Every public page is served with its own head and its own text. The titles and
+# headings are the page registry's (src/config/pages.ts), spelled out here on
+# purpose: this is the one check that reads what nginx really sends.
+echo "==> public pages are served prerendered"
+serves_baked '/' "$SHELL_TITLE" 'Stop Re-prompting.<br>Start Kolewoofing.'
+expect_contains '"@type":"SoftwareApplication"'
+serves_baked '/pricing' 'Pricing — Koleslaw' 'Pricing'
+serves_baked '/contact' 'Contact — Koleslaw' 'Contact Us'
+serves_baked '/terms' 'Terms of Service — Koleslaw' 'Terms of Service'
+serves_baked '/privacy' 'Privacy Policy — Koleslaw' 'Privacy Policy'
+
+# App routes never get a baked page — there is nothing public to prerender — so
+# the shell is the permanent answer, and a bookmarked one must still boot.
+echo "==> app routes still boot the SPA"
+for route in '/login' '/signup' '/chat' '/dashboard' '/keys' '/profile'; do
+  serves_shell "$route"
 done
 
 echo "==> hashed assets are still served as real files"
@@ -229,7 +349,7 @@ expect_missing 'Disallow: /blog'
 
 echo
 if [ "$failures" -eq 0 ]; then
-  echo "PASS — all blog route assertions held"
+  echo "PASS — all route assertions held"
 else
   echo "FAIL — ${failures} assertion(s) failed"
 fi

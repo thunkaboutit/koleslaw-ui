@@ -4,6 +4,7 @@ description: Spot can take the box behind the product with two minutes of notice
 date: 2026-08-08
 tags: [ aws, spot, gpu, resilience, koleslaw ]
 draft: false
+ogImage: /og/designing-for-the-gpu-being-gone.png
 ---
 
 In the 21 hours after spot went back on, AWS took the GPU behind [Koleslaw](https://koleslaw.ai) seven times.  The

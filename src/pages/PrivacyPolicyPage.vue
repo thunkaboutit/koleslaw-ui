@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useMarkdown } from '@/composables/useMarkdown'
+import { usePageSeo } from '@/composables/useSeo'
 import privacyRaw from '@/assets/policies/privacy.md?raw'
+
+const page = usePageSeo('privacy')
 
 const { renderMarkdown } = useMarkdown()
 
@@ -43,7 +46,7 @@ async function downloadPdf() {
 <template>
   <div class="policy-page">
     <div class="policy-header">
-      <h1>Privacy Policy</h1>
+      <h1>{{ page.heading }}</h1>
       <button
         class="download-btn"
         aria-label="Download Privacy Policy as PDF"

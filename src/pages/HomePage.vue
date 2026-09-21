@@ -3,7 +3,11 @@ import { onMounted, ref } from 'vue'
 import mascotSrc from '@/assets/koleslaw-logo-mascot-woof.svg'
 import logoSrc from '@/assets/koleslaw-logo-woof-bubble.svg'
 import EnhancePanel from '@/components/EnhancePanel.vue'
+import { usePageSeo } from '@/composables/useSeo'
 import { CHROME_STORE_URL } from '@/config/site'
+import { HOME_HERO } from '@/content/home'
+
+usePageSeo('home')
 
 const isSubmitting = ref(false)
 
@@ -117,18 +121,16 @@ function setSectionRef(idx: number) {
         </div>
         <div class="hero__content">
           <h1 class="hero__title">
-            Stop Re-prompting.<br />
-            Start Kolewoofing.
+            <template v-for="(line, index) in HOME_HERO.headline" :key="line">
+              <br v-if="index > 0" />{{ line }}
+            </template>
           </h1>
-          <p class="hero__subtitle">
-            Koleslaw takes your rough prompt and turns it into exactly what AI needs to hear. Better
-            input, better output — it's not rocket science. It's a barking cow.
-          </p>
+          <p class="hero__subtitle">{{ HOME_HERO.subtitle }}</p>
           <div class="hero__cta">
             <a :href="CHROME_STORE_URL" target="_blank" rel="noopener" class="hero__cta-btn">
-              Get the Chrome extension
+              {{ HOME_HERO.cta.label }}
             </a>
-            <span class="hero__cta-note">Enhance in place on ChatGPT, Claude, and Gemini.</span>
+            <span class="hero__cta-note">{{ HOME_HERO.cta.note }}</span>
           </div>
           <div class="hero__flow">
             <div class="flow-step">

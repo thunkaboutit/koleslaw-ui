@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import BlogPostCard from '@/components/BlogPostCard.vue'
-import { useSeo } from '@/composables/useSeo'
+import { usePageSeo } from '@/composables/useSeo'
 import { allPosts } from '@/content/posts'
-import { BLOG_DESCRIPTION, BLOG_TITLE, SITE_URL } from '@/config/site'
+import { BLOG_DESCRIPTION, BLOG_TITLE } from '@/config/site'
 
-useSeo({
-  title: `${BLOG_TITLE} — koleslaw.ai`,
-  description: BLOG_DESCRIPTION,
-  canonical: `${SITE_URL}/blog`,
-})
+usePageSeo('blog')
 </script>
 
 <template>
