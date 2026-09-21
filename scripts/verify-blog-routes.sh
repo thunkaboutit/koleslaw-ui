@@ -370,6 +370,11 @@ echo "==> public pages are served prerendered"
 serves_baked '/' "$SHELL_TITLE" 'Stop Re-prompting.<br>Start Kolewoofing.'
 expect_contains '"@type":"SoftwareApplication"'
 serves_baked '/pricing' 'Pricing — Koleslaw' 'Pricing'
+# The plans themselves, not a sentence about them: they come from
+# src/content/pricing.ts, the same data the page's cards are drawn from.
+expect_contains '<h2>Pro</h2>'
+expect_contains '$10/month'
+expect_contains '500 enhances/day per API key'
 serves_baked '/contact' 'Contact — Koleslaw' 'Contact Us'
 serves_baked '/terms' 'Terms of Service — Koleslaw' 'Terms of Service'
 serves_baked '/privacy' 'Privacy Policy — Koleslaw' 'Privacy Policy'
