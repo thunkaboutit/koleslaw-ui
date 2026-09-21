@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import logoSrc from '@/assets/koleslaw-logo-woof-bubble.svg'
+import { CHROME_STORE_URL } from '@/config/site'
 
 withDefaults(
   defineProps<{
@@ -18,6 +19,9 @@ withDefaults(
     <div class="footer__inner">
       <div class="footer__links">
         <RouterLink to="/blog" class="footer__link">Blog</RouterLink>
+        <a :href="CHROME_STORE_URL" target="_blank" rel="noopener" class="footer__link"
+          >Chrome Extension</a
+        >
         <RouterLink to="/terms" class="footer__link">Terms of Service</RouterLink>
         <RouterLink to="/privacy" class="footer__link">Privacy Policy</RouterLink>
         <RouterLink to="/contact" class="footer__link">Contact Us</RouterLink>

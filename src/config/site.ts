@@ -14,6 +14,10 @@ export const BLOG_TITLE = 'The Koleslaw Blog'
 export const BLOG_DESCRIPTION =
   'Notes from running a fine-tuned 30B model in production: quantization, spot GPUs, failure design, and what it all costs.'
 
+/** Chrome Web Store listing for the Koleslaw extension (live 2026-08-25). */
+export const CHROME_STORE_URL =
+  'https://chromewebstore.google.com/detail/koleslaw-%E2%80%94-ai-prompt-enha/jehgfkfcpgckejkfpojfnllpfkdmelak'
+
 /** Fallback social card, used when a post declares no ogImage of its own. */
 export const DEFAULT_OG_IMAGE = '/og/default.png'
 
