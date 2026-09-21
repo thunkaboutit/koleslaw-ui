@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useMarkdown } from '@/composables/useMarkdown'
+import { usePageSeo } from '@/composables/useSeo'
 import termsRaw from '@/assets/policies/terms.md?raw'
+
+usePageSeo('terms')
 
 const { renderMarkdown } = useMarkdown()
 

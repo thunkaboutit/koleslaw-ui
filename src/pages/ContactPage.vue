@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import ContactForm from '@/components/ContactForm.vue'
+import { usePageSeo } from '@/composables/useSeo'
+
+usePageSeo('contact')
 </script>
 
 <template>

@@ -1,5 +1,6 @@
 import { onBeforeUnmount, watchEffect, type MaybeRefOrGetter, toValue } from 'vue'
-import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_URL } from '@/config/site'
+import { pageUrl, staticPage, type PageName } from '@/config/pages'
+import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_TITLE, SITE_URL } from '@/config/site'
 
 export interface SeoTags {
   title: string
@@ -13,8 +14,6 @@ export interface SeoTags {
   /** ISO date, emitted as article:published_time. */
   publishedTime?: string
 }
-
-const DEFAULT_TITLE = 'Koleslaw — AI Prompt Enhancement'
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string): void {
   const selector = `meta[${attr}="${key}"]`
@@ -87,7 +86,24 @@ export function useSeo(tags: MaybeRefOrGetter<SeoTags>): void {
 
   // Leaving the blog must not strand a post's tags on the rest of the app.
   onBeforeUnmount(() => {
-    document.title = DEFAULT_TITLE
+    document.title = SITE_TITLE
     document.head.querySelectorAll('[data-seo="managed"]').forEach((node) => node.remove())
+  })
+}
+
+/**
+ * The same, for a page whose head lives in the static registry.
+ *
+ * Pages call this instead of spelling their own strings out, so the tags the
+ * SPA sets and the tags baked into the static HTML come from one entry and
+ * cannot drift apart.
+ */
+export function usePageSeo(name: PageName): void {
+  const page = staticPage(name)
+
+  useSeo({
+    title: page.title,
+    description: page.description,
+    canonical: pageUrl(page),
   })
 }

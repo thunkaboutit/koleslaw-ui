@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { usePageSeo } from '@/composables/useSeo'
 import { BILLING_PORTAL_LOGIN_URL, proCheckoutUrl } from '@/config/billing'
+
+usePageSeo('pricing')
 
 const auth = useAuthStore()
 

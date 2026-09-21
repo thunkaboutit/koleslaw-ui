@@ -9,6 +9,12 @@ export const SITE_URL = 'https://koleslaw.ai'
 
 export const SITE_NAME = 'Koleslaw'
 
+/**
+ * The shell's <title>, and what the head is restored to when a page that
+ * claimed the title unmounts. index.html carries the same string.
+ */
+export const SITE_TITLE = 'Koleslaw — AI Prompt Enhancement'
+
 export const BLOG_TITLE = 'The Koleslaw Blog'
 
 export const BLOG_DESCRIPTION =
