@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import router from '@/router'
 import { pageUrl, staticPage, STATIC_PAGES, type PageName } from '../pages'
-import { BLOG_DESCRIPTION, BLOG_TITLE, SITE_TITLE } from '../site'
+import { BLOG_DESCRIPTION, BLOG_TITLE, SITE_NAME, SITE_TITLE } from '../site'
 
 /** Google truncates a snippet well short of 160, and ignores one under ~50. */
 const DESCRIPTION_MIN = 50
@@ -40,6 +40,17 @@ describe('STATIC_PAGES', () => {
     expect(staticPage('home').title).toBe(SITE_TITLE)
     expect(staticPage('blog').title).toBe(`${BLOG_TITLE} — koleslaw.ai`)
     expect(staticPage('blog').description).toBe(BLOG_DESCRIPTION)
+  })
+
+  it('names the heading each page shows, which is also its label in the baked site nav', () => {
+    expect(STATIC_PAGES.map((page) => page.heading)).toEqual([
+      SITE_NAME,
+      BLOG_TITLE,
+      'Pricing',
+      'Contact Us',
+      'Terms of Service',
+      'Privacy Policy',
+    ])
   })
 
   it('carries no trailing slash on any path but the root', () => {

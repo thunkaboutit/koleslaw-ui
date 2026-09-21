@@ -1,4 +1,4 @@
-import { BLOG_DESCRIPTION, BLOG_TITLE, SITE_TITLE, SITE_URL } from './site'
+import { BLOG_DESCRIPTION, BLOG_TITLE, SITE_NAME, SITE_TITLE, SITE_URL } from './site'
 
 /**
  * Head data for every public static page.
@@ -19,6 +19,12 @@ export interface StaticPage {
   path: string
   title: string
   description: string
+  /**
+   * The page's visible h1. The build bakes it into the static HTML and labels
+   * the baked site nav with it; pricing, contact, terms and privacy render it
+   * too, so what a crawler reads and what a person sees is one string.
+   */
+  heading: string
 }
 
 export const STATIC_PAGES: readonly StaticPage[] = [
@@ -28,12 +34,14 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     title: SITE_TITLE,
     description:
       'Koleslaw turns a rough prompt into a clear, well-structured one before you send it to an AI model. Try it here, or in place on ChatGPT, Claude, and Gemini.',
+    heading: SITE_NAME,
   },
   {
     name: 'blog',
     path: '/blog',
     title: `${BLOG_TITLE} — koleslaw.ai`,
     description: BLOG_DESCRIPTION,
+    heading: BLOG_TITLE,
   },
   {
     name: 'pricing',
@@ -41,6 +49,7 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     title: 'Pricing — Koleslaw',
     description:
       'Koleslaw is free for 50 prompt enhancements a day per API key. Pro is $10 a month for 500 a day. The playground needs no account at all.',
+    heading: 'Pricing',
   },
   {
     name: 'contact',
@@ -48,6 +57,7 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     title: 'Contact — Koleslaw',
     description:
       'Questions, bug reports, and feedback about Koleslaw, the AI prompt enhancer built and run by Thunk About It.',
+    heading: 'Contact Us',
   },
   {
     name: 'terms',
@@ -55,6 +65,7 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     title: 'Terms of Service — Koleslaw',
     description:
       'The terms that govern your use of Koleslaw, the AI prompt enhancement service built and run by Thunk About It.',
+    heading: 'Terms of Service',
   },
   {
     name: 'privacy',
@@ -62,6 +73,7 @@ export const STATIC_PAGES: readonly StaticPage[] = [
     title: 'Privacy Policy — Koleslaw',
     description:
       'What Koleslaw collects, what happens to the prompts you send, who processes them, and how to delete your account and your data.',
+    heading: 'Privacy Policy',
   },
 ]
 

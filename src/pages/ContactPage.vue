@@ -2,13 +2,13 @@
 import ContactForm from '@/components/ContactForm.vue'
 import { usePageSeo } from '@/composables/useSeo'
 
-usePageSeo('contact')
+const page = usePageSeo('contact')
 </script>
 
 <template>
   <div class="contact">
     <div class="contact__card">
-      <h1 class="contact__title">Contact Us</h1>
+      <h1 class="contact__title">{{ page.heading }}</h1>
       <p class="contact__subtitle">
         Have a question, found a bug, or just want to say woof? Drop us a line.
       </p>

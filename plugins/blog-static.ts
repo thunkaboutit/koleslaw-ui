@@ -1,46 +1,43 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import type { Plugin, ResolvedConfig } from 'vite'
-import {
-  BLOG_DESCRIPTION,
-  BLOG_TITLE,
-  DEFAULT_OG_IMAGE,
-  SITE_URL,
-  postUrl,
-} from '../src/config/site'
+import { DEFAULT_OG_IMAGE, SITE_URL } from '../src/config/site'
 import { parsePost } from '../src/content/frontmatter'
-import {
-  buildPage,
-  publishedPosts,
-  renderRobots,
-  renderRss,
-  renderSitemap,
-  type BlogPost,
-} from './blog-render'
+import { createMarkdownRenderer } from '../src/content/markdown'
+import { renderRobots, renderRss, renderSitemap } from './blog-render'
+import { bakePage, sitePages, type SourcePost } from './static-pages'
 
 /**
- * Bakes per-post static HTML, an RSS feed, and a sitemap into the build output.
+ * Bakes a static HTML file for every public page, plus the RSS feed, the
+ * sitemap and robots.txt, into the build output.
  *
- * The UI is a client-rendered SPA: every route serves the same index.html
- * with one hard-coded <title> and no social tags. Link unfurlers (Reddit,
- * Slack, LinkedIn, X) do not run JavaScript, so without this every shared post
- * would preview as "Koleslaw — AI Prompt Enhancement".
+ * The UI is a client-rendered SPA: left alone, every route serves the same
+ * index.html with one hard-coded <title>, no social tags and an empty
+ * <div id="app">. Link unfurlers, Bing and the AI crawlers (GPTBot, ClaudeBot,
+ * PerplexityBot) do not run JavaScript, so to them every page was a blank one
+ * called "Koleslaw — AI Prompt Enhancement".
  *
- * This writes dist/blog/<slug>.html — the SPA shell with that post's title,
- * description, canonical and Open Graph tags substituted in. nginx serves the
- * real file (see the $uri.html clause in nginx.conf.template), the SPA boots
- * as usual, and the user sees no difference. Routing is covered by
- * scripts/verify-blog-routes.sh; the rendering itself lives in blog-render.ts
- * and is covered by its unit tests.
+ * So each public URL gets its own file: the built shell with that page's
+ * title, description, canonical, Open Graph tags and JSON-LD in the head, and
+ * the page's real text baked into the mount point. nginx serves the file (see
+ * the $uri.html clauses in nginx.conf.template), the SPA boots as usual, and
+ * createApp().mount() replaces the baked body with the live app. This is not
+ * SSR and nothing hydrates: the boot path is exactly what it was.
  *
- * Body content is deliberately NOT prerendered. Correct meta tags fix
- * unfurling outright, and Google renders JS for the article text. If organic
- * search ever justifies it, full prerendering via vite-ssg is the next step.
+ * index.html itself is never written to. It is what the authed app routes and
+ * every 404 are served, so it stays the neutral shell; the home page goes to
+ * home.html.
+ *
+ * This file owns the disk and nothing else. What each page contains is decided
+ * in static-pages.ts, rendered by blog-render.ts, json-ld.ts and
+ * body-render.ts, and covered by their unit tests; that the files are reachable
+ * at their canonical URLs is covered by scripts/verify-blog-routes.sh.
  */
 
 const CONTENT_DIR = 'src/content/blog'
+const POLICY_DIR = 'src/assets/policies'
 
-function loadPosts(root: string): BlogPost[] {
+function loadPosts(root: string): SourcePost[] {
   const dir = resolve(root, CONTENT_DIR)
   if (!existsSync(dir)) return []
 
@@ -48,9 +45,14 @@ function loadPosts(root: string): BlogPost[] {
     .filter((name) => name.endsWith('.md'))
     .map((name) => {
       const path = join(dir, name)
-      const { frontmatter } = parsePost(readFileSync(path, 'utf8'), `${CONTENT_DIR}/${name}`)
-      return { ...frontmatter, slug: name.replace(/\.md$/, '') }
+      const { frontmatter, body } = parsePost(readFileSync(path, 'utf8'), `${CONTENT_DIR}/${name}`)
+      return { ...frontmatter, slug: name.replace(/\.md$/, ''), body }
     })
+}
+
+/** The same files the policy pages import with `?raw`. Missing one fails the build. */
+function loadPolicy(root: string, name: 'terms' | 'privacy'): string {
+  return readFileSync(resolve(root, POLICY_DIR, `${name}.md`), 'utf8')
 }
 
 /**
@@ -88,40 +90,28 @@ export function blogStatic(): Plugin {
       const shellPath = join(outDir, 'index.html')
 
       if (!existsSync(shellPath)) {
-        this.warn('index.html not found in the build output; skipping blog static generation')
+        this.warn('index.html not found in the build output; skipping static page generation')
         return
       }
 
       const shell = readFileSync(shellPath, 'utf8')
+      const markdown = createMarkdownRenderer()
       // A malformed post throws here and fails the build on purpose. Shipping a
       // post with no title is worse than not shipping.
-      const posts = publishedPosts(loadPosts(config.root))
+      const posts = loadPosts(config.root)
 
-      write(
-        outDir,
-        'blog.html',
-        buildPage(shell, {
-          title: `${BLOG_TITLE} — koleslaw.ai`,
-          description: BLOG_DESCRIPTION,
-          canonical: `${SITE_URL}/blog`,
-          image: resolveImage(outDir, undefined),
-          type: 'website',
-        }),
-      )
+      const pages = sitePages({
+        posts,
+        documents: {
+          terms: loadPolicy(config.root, 'terms'),
+          privacy: loadPolicy(config.root, 'privacy'),
+        },
+        renderMarkdown: (raw) => markdown.render(raw),
+        resolveImage: (image) => resolveImage(outDir, image),
+      })
 
-      for (const post of posts) {
-        write(
-          outDir,
-          `blog/${post.slug}.html`,
-          buildPage(shell, {
-            title: `${post.title} — ${BLOG_TITLE}`,
-            description: post.description,
-            canonical: postUrl(post.slug),
-            image: resolveImage(outDir, post.ogImage),
-            type: 'article',
-            publishedTime: post.date,
-          }),
-        )
+      for (const page of pages) {
+        write(outDir, page.file, bakePage(shell, page))
       }
 
       write(outDir, 'rss.xml', renderRss(posts))
@@ -129,9 +119,8 @@ export function blogStatic(): Plugin {
       write(outDir, 'robots.txt', renderRobots())
 
       config.logger.info(
-        `  blog: ${posts.length} post${
-          posts.length === 1 ? '' : 's'
-        }, rss.xml, sitemap.xml, robots.txt`,
+        `  static pages: ${pages.length} baked (${pages.map((page) => page.file).join(', ')}), ` +
+          'rss.xml, sitemap.xml, robots.txt',
       )
     },
   }

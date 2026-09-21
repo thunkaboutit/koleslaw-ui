@@ -55,4 +55,22 @@ describe('the public pages', () => {
       page.description,
     )
   })
+
+  /**
+   * The build bakes `heading` into the static HTML as the page's h1. These four
+   * pages show it themselves, so the two can only agree if the template reads
+   * the registry rather than spelling the words out a second time.
+   */
+  it.each(['pricing', 'contact', 'terms', 'privacy'] as const)(
+    'heads the %s page with the registry heading',
+    (name) => {
+      const component = PUBLIC_PAGES.find(([candidate]) => candidate === name)?.[1]
+
+      const wrapper = shallowMount(component as Component, {
+        global: { stubs: { RouterLink: true } },
+      })
+
+      expect(wrapper.get('h1').text()).toBe(staticPage(name).heading)
+    },
+  )
 })

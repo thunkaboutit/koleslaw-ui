@@ -1,5 +1,5 @@
 import { onBeforeUnmount, watchEffect, type MaybeRefOrGetter, toValue } from 'vue'
-import { pageUrl, staticPage, type PageName } from '@/config/pages'
+import { pageUrl, staticPage, type PageName, type StaticPage } from '@/config/pages'
 import { DEFAULT_OG_IMAGE, SITE_NAME, SITE_TITLE, SITE_URL } from '@/config/site'
 
 export interface SeoTags {
@@ -96,9 +96,10 @@ export function useSeo(tags: MaybeRefOrGetter<SeoTags>): void {
  *
  * Pages call this instead of spelling their own strings out, so the tags the
  * SPA sets and the tags baked into the static HTML come from one entry and
- * cannot drift apart.
+ * cannot drift apart. Hands the entry back so a page can show its `heading`
+ * without a second lookup.
  */
-export function usePageSeo(name: PageName): void {
+export function usePageSeo(name: PageName): StaticPage {
   const page = staticPage(name)
 
   useSeo({
@@ -106,4 +107,6 @@ export function usePageSeo(name: PageName): void {
     description: page.description,
     canonical: pageUrl(page),
   })
+
+  return page
 }

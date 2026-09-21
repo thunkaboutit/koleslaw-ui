@@ -1,3 +1,4 @@
+import { STATIC_PAGES } from '../src/config/pages'
 import { BLOG_DESCRIPTION, BLOG_TITLE, SITE_NAME, SITE_URL, postUrl } from '../src/config/site'
 import type { PostFrontmatter } from '../src/content/frontmatter'
 
@@ -25,8 +26,13 @@ export interface PageMeta {
   publishedTime?: string
 }
 
-/** Public routes worth listing in the sitemap. Authed app routes stay out. */
-export const STATIC_ROUTES = ['/', '/blog', '/pricing', '/contact', '/terms', '/privacy']
+/**
+ * Public routes worth listing in the sitemap. Authed app routes stay out.
+ *
+ * Read off the page registry rather than listed again: the registry is what the
+ * build bakes a page for, so the sitemap can only name pages that really exist.
+ */
+export const STATIC_ROUTES = STATIC_PAGES.map((page) => page.path)
 
 /**
  * Routes behind auth. They serve the same SPA shell as everything else, so to a
@@ -92,14 +98,24 @@ function renderHead(meta: PageMeta): string {
   ].join('\n')
 }
 
-/** The built SPA shell with this page's title and social tags substituted in. */
-export function buildPage(shell: string, meta: PageMeta): string {
+/**
+ * The built SPA shell with this page's title and social tags substituted in.
+ *
+ * @param extraHead Ready-made head markup to place after the tags, such as the
+ *                  JSON-LD block from json-ld.ts. It arrives rendered so this
+ *                  module stays about meta tags and never learns schema.org.
+ */
+export function buildPage(shell: string, meta: PageMeta, extraHead = ''): string {
+  // Replacer functions throughout: escapeHtml turns `$"` into `$&quot;`, and
+  // `$&` in a replacement STRING means "the matched text", not two characters.
   const withTitle = shell.replace(
     /<title>[\s\S]*?<\/title>/,
-    `<title>${escapeHtml(meta.title)}</title>`,
+    () => `<title>${escapeHtml(meta.title)}</title>`,
   )
+  const head = extraHead === '' ? renderHead(meta) : `${renderHead(meta)}\n${extraHead}`
+
   // Swallow the closing tag's own indentation so the injected block lines up.
-  return withTitle.replace(/[ \t]*<\/head>/, `${renderHead(meta)}\n  </head>`)
+  return withTitle.replace(/[ \t]*<\/head>/, () => `${head}\n  </head>`)
 }
 
 export function renderRss(posts: BlogPost[]): string {

@@ -43,7 +43,10 @@ const ORGANIZATION_SAME_AS = [
 /** Everything the site publishes is in English; schema.org wants it per node. */
 const LANGUAGE = 'en'
 
-/** The two live plans. Mirrors the pricing page; there is no third tier. */
+/**
+ * The two plans with a price. The pricing page also shows Teams ("Let's talk"),
+ * which has no price to state, and an Offer without one is worse than none.
+ */
 const OFFERS = [
   {
     '@type': 'Offer',

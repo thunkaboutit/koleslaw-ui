@@ -9,6 +9,7 @@ import {
   type BlogPost,
   type PageMeta,
 } from '../blog-render'
+import { STATIC_PAGES } from '../../src/config/pages'
 
 /** Stand-in for dist/index.html: one title, hashed assets, nothing else. */
 const SHELL = [
@@ -125,6 +126,20 @@ describe('buildPage', () => {
     expect(html).toContain('content="A &quot;quoted&quot; &amp; &lt;bracketed&gt; description"')
   })
 
+  it('keeps replacement patterns in the content literal', () => {
+    // `$&` and `$'` mean something to String.replace. Posts here quote shell
+    // and awk often enough that one will reach a title or a description.
+    const html = buildPage(
+      SHELL,
+      meta({ title: "Cost $& then $' again", description: 'Paid $` for it' }),
+      "    <!-- $& $' -->",
+    )
+
+    expect(html).toContain('<title>Cost $&amp; then $&#39; again</title>')
+    expect(html).toContain('<meta name="description" content="Paid $` for it">')
+    expect(html).toContain("    <!-- $& $' -->")
+  })
+
   it('omits image tags when no card art exists', () => {
     const html = buildPage(SHELL, meta({ image: undefined }))
 
@@ -153,6 +168,21 @@ describe('buildPage', () => {
     expect(html).toContain('<div id="app"></div>')
     expect(count(html, '</head>')).toBe(1)
     expect(html.startsWith('<!DOCTYPE html>')).toBe(true)
+  })
+
+  it('places extra head markup, such as a JSON-LD block, inside the head', () => {
+    const block = '    <script type="application/ld+json">{"@graph":[]}</script>'
+    const html = buildPage(SHELL, meta(), block)
+    const head = html.slice(0, html.indexOf('</head>'))
+
+    expect(count(html, block)).toBe(1)
+    expect(head).toContain(block)
+    expect(html).toContain(`${block}\n  </head>`)
+  })
+
+  it('adds nothing to the head when there is no extra markup', () => {
+    expect(buildPage(SHELL, meta(), '')).toBe(buildPage(SHELL, meta()))
+    expect(buildPage(SHELL, meta())).not.toContain('\n\n  </head>')
   })
 
   it('points at the RSS feed', () => {
@@ -243,6 +273,12 @@ describe('renderRobots', () => {
       expect(sitemap).toContain(`<loc>https://koleslaw.ai${route}</loc>`)
       expect(robots).not.toContain(`Disallow: ${route}\n`)
     }
+  })
+})
+
+describe('STATIC_ROUTES', () => {
+  it('is the page registry, so the sitemap cannot list a page the build does not bake', () => {
+    expect(STATIC_ROUTES).toEqual(STATIC_PAGES.map((page) => page.path))
   })
 })
 
