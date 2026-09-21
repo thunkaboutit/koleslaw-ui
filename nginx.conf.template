@@ -5,6 +5,12 @@ server {
     root   /usr/share/nginx/html;
     index  index.html;
 
+    # This server sits on plain :80 behind Cloudflare and the ALB, so it cannot
+    # know the scheme, host or port the client actually used. An absolute
+    # Location header would therefore send visitors to http:// on the wrong
+    # host; relative ones let the proxy chain keep its own address.
+    absolute_redirect off;
+
     # Gzip compression
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript image/svg+xml;
@@ -17,6 +23,10 @@ server {
     }
 
     # Proxy API and auth requests to the backend
+    #
+    # These two keep their own locations partly so the trailing-slash rewrite
+    # below cannot touch them: the API's MCP endpoint is /v1/mcp/ and needs its
+    # slash.
     location /auth/ {
         resolver 127.0.0.11 valid=10s;
         set $backend ${API_UPSTREAM};
@@ -37,14 +47,38 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    # SPA fallback — serve index.html for all non-file routes.
-    #
-    # $uri.html comes first so the blog's build-time pages (blog.html,
-    # blog/<slug>.html — see plugins/blog-static.ts) are served directly with
-    # their baked-in title and Open Graph tags. Matching on the extension
-    # keeps canonical URLs free of trailing slashes, which a directory-index
-    # lookup would otherwise redirect to.
-    location / {
-        try_files $uri $uri.html $uri/ /index.html;
+    # "/" serves the prerendered home page when the build produced one.
+    # index.html stays the NEUTRAL shell that app routes and the 404 response
+    # share, so it must not carry the home page's content.
+    location = / {
+        try_files /home.html /index.html;
     }
+
+    # Every client-side route the app knows. A baked page wins when the build
+    # wrote one (blog.html, pricing.html, ...); otherwise the neutral shell
+    # boots the route. 200 either way — these URLs exist.
+    #
+    # The list repeats what src/router/index.ts declares, which nothing here can
+    # check: plugins/__tests__/nginx-routes.spec.ts is what keeps the two in step.
+    location ~ ^/(blog|pricing|contact|terms|privacy|login|signup|chat|dashboard|keys|profile)$ {
+        try_files $uri.html /index.html;
+    }
+
+    # Everything else is a real file, a build-time page, or nothing at all.
+    #
+    # $uri.html is what serves the blog's generated pages (blog/<slug>.html, see
+    # plugins/blog-static.ts) with their baked-in title and Open Graph tags.
+    # There is deliberately no $uri/ clause: directory indexes would hand out a
+    # second, trailing-slash URL for pages that already have a canonical one.
+    location / {
+        rewrite ^/(.+)/$ /$1 permanent;      # /blog/ -> /blog, relatively
+        try_files $uri $uri.html =404;
+    }
+
+    # An unknown URL used to fall through to the shell with a 200, which told
+    # crawlers the site had an endless supply of duplicate pages and handed
+    # browsers HTML in place of a missing script. The shell is still the body,
+    # so the SPA boots and renders its own not-found page; without "=200" the
+    # status stays 404, which is the part that counts.
+    error_page 404 /index.html;
 }
