@@ -1,23 +1,16 @@
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
+import type MarkdownIt from 'markdown-it'
+import { createMarkdownRenderer } from '@/content/markdown'
 import 'highlight.js/styles/github.css'
 
-const { escapeHtml } = MarkdownIt().utils
-
-const md: MarkdownIt = new MarkdownIt({
-  linkify: true,
-  typographer: true,
-  highlight(str: string, lang: string): string {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return `<pre class="hljs"><code class="language-${lang}">${hljs.highlight(str, { language: lang }).value}</code></pre>`
-      } catch {
-        /* fallback below */
-      }
-    }
-    return `<pre class="hljs"><code>${escapeHtml(str)}</code></pre>`
-  },
-})
+/**
+ * Markdown for the app.
+ *
+ * The configuration itself lives in src/content/markdown.ts so the build can
+ * share it; what stays here is the stylesheet, which only a browser needs. One
+ * instance per module rather than per call: MarkdownIt is stateless between
+ * renders and constructing it is the expensive part.
+ */
+const md: MarkdownIt = createMarkdownRenderer()
 
 export function useMarkdown() {
   function renderMarkdown(raw: string): string {
