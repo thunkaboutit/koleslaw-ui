@@ -7,11 +7,13 @@ import {
   renderHomeBody,
   renderPageBody,
   renderPostBody,
+  renderPricingBody,
   renderSiteNav,
   type HeroCopy,
   type NavLink,
 } from '../body-render'
 import type { BlogPost } from '../blog-render'
+import type { PricingPlan } from '../../src/content/pricing'
 
 /** Stand-in for dist/index.html: one empty mount point, hashed assets. */
 const SHELL = [
@@ -62,6 +64,37 @@ function hero(overrides: Partial<HeroCopy> = {}): HeroCopy {
   }
 }
 
+/** Three plans, one of them emphasising a number and one of them priced in words. */
+const PLANS: readonly PricingPlan[] = [
+  {
+    name: 'Free',
+    price: '$0',
+    period: '/month',
+    amount: '0',
+    features: [{ text: '50 enhances/day per API key' }, { text: '60 requests/min' }],
+  },
+  {
+    name: 'Pro',
+    price: '$10',
+    period: '/month',
+    amount: '10.00',
+    featured: true,
+    features: [{ lead: '500', text: ' enhances/day per API key' }, { text: 'Priority support' }],
+  },
+  {
+    name: 'Teams',
+    price: "Let's talk",
+    features: [{ text: 'SSO & admin controls' }],
+  },
+]
+
+const TAGLINE = 'Start free. Upgrade when you outgrow the limits.'
+const NOTE = 'The playground stays free for everyone — 10 enhances/day, no account needed.'
+
+function pricing(plans: readonly PricingPlan[] = PLANS): string {
+  return renderPricingBody({ heading: 'Pricing', tagline: TAGLINE, plans, note: NOTE })
+}
+
 function parse(html: string): Document {
   return new DOMParser().parseFromString(html, 'text/html')
 }
@@ -74,6 +107,7 @@ function texts(html: string, selector: string): string[] {
 const BODIES: [string, string][] = [
   ['home', renderHomeBody(hero())],
   ['page', renderPageBody({ heading: 'Pricing', description: 'Pay for what you enhance.' })],
+  ['pricing', pricing()],
   ['document', renderDocumentBody('Privacy Policy', '<p>We keep prompts for 30 days.</p>')],
   ['blog index', renderBlogIndexBody([post(), post({ slug: 'other', date: '2026-06-01' })])],
   [
@@ -306,6 +340,58 @@ describe('renderPageBody', () => {
     expect(doc.querySelectorAll('h1')).toHaveLength(1)
     expect(doc.querySelector('h1')?.textContent).toBe('Pricing')
     expect(doc.querySelector('p')?.textContent).toBe('Pay per enhance.')
+  })
+})
+
+describe('renderPricingBody', () => {
+  it('heads the page once and opens with the tagline', () => {
+    const doc = parse(pricing())
+
+    expect(doc.querySelectorAll('h1')).toHaveLength(1)
+    expect(doc.querySelector('h1')?.textContent).toBe('Pricing')
+    expect(doc.querySelector('p')?.textContent).toBe(TAGLINE)
+  })
+
+  it('gives every plan a section, named and priced', () => {
+    const html = pricing()
+
+    expect(texts(html, 'section h2')).toEqual(['Free', 'Pro', 'Teams'])
+    expect(texts(html, 'section > p')).toEqual(['$0/month', '$10/month', "Let's talk"])
+  })
+
+  it('lists the features as plain text, lead-in and all', () => {
+    const html = pricing()
+
+    expect(texts(html, 'section li')).toEqual([
+      '50 enhances/day per API key',
+      '60 requests/min',
+      '500 enhances/day per API key',
+      'Priority support',
+      'SSO & admin controls',
+    ])
+    // The card's <strong> is styling the app does; the baked line is one string.
+    expect(parse(html).querySelector('li strong')).toBeNull()
+  })
+
+  it('closes with the note under the plans', () => {
+    const paragraphs = texts(pricing(), 'main > p')
+
+    expect(paragraphs[paragraphs.length - 1]).toBe(NOTE)
+  })
+
+  it('escapes every string it is handed', () => {
+    const html = pricing([
+      {
+        name: 'Rogue & Co',
+        price: '<script>alert(1)</script>',
+        features: [{ lead: '5 > 3', text: ' & rising' }],
+      },
+    ])
+
+    expect(html).toContain('<h2>Rogue &amp; Co</h2>')
+    expect(html).not.toContain('<script>')
+    expect(parse(html).querySelector('script')).toBeNull()
+    expect(texts(html, 'section li')).toEqual(['5 > 3 & rising'])
   })
 })
 
