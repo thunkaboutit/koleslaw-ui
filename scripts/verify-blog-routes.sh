@@ -94,6 +94,26 @@ expect_contains() {
   if grep -qF -- "$1" "$BODY"; then ok "contains: $1"; else bad "missing: $1"; fi
 }
 
+# index.html is what app routes and every 404 are served. If a page's content is
+# ever baked into it, a login screen and a not-found page both open on that text.
+expect_neutral_shell() {
+  expect_missing 'class="prerendered"'
+  expect_missing 'rel="canonical"'
+}
+
+# A public page: its own head, its structured data, and its text in the body,
+# all in the HTML as served, which is all a crawler that runs no scripts gets.
+serves_baked() {
+  fetch "$1"
+  expect_status 200
+  expect_no_redirect
+  expect_contains "<title>$2</title>"
+  expect_contains "<link rel=\"canonical\" href=\"https://koleslaw.ai$1\">"
+  expect_contains '<script type="application/ld+json">'
+  expect_contains '<main class="prerendered"'
+  expect_contains "<h1>$3</h1>"
+}
+
 expect_missing() {
   if grep -qF -- "$1" "$BODY"; then bad "should not contain: $1"; else ok "absent: $1"; fi
 }
@@ -105,6 +125,7 @@ serves_shell() {
   else
     bad "${1} returned ${status} and did not serve the SPA shell"
   fi
+  expect_neutral_shell
 }
 
 # --- fixtures -----------------------------------------------------------------
@@ -182,6 +203,12 @@ expect_contains '<meta property="og:image" content="https://koleslaw.ai/og/defau
 expect_contains '<meta name="twitter:card" content="summary_large_image">'
 expect_missing "<title>${SHELL_TITLE}</title>"
 
+echo "==> and the article itself, in the served HTML"
+expect_contains '"@type":"BlogPosting"'
+expect_contains '<main class="prerendered"'
+expect_contains "<h1>${TITLE}</h1>"
+expect_contains 'Fixture body.'
+
 echo "==> the card art the tags point at is really there"
 fetch '/og/default.png'
 expect_status 200
@@ -199,6 +226,9 @@ expect_status 200
 expect_no_redirect
 expect_contains '<title>The Koleslaw Blog — koleslaw.ai</title>'
 expect_contains '<link rel="canonical" href="https://koleslaw.ai/blog">'
+expect_contains '"@type":"Blog"'
+expect_contains "<a href=\"/blog/${SLUG}\">${TITLE}</a>"
+expect_missing "$DRAFT_SLUG"
 
 # --- scenario: URLs the app does not serve are real 404s ----------------------
 #
@@ -209,6 +239,7 @@ echo "==> an unknown URL is a real 404"
 fetch '/definitely-not-a-page'
 expect_status 404
 expect_contains "<title>${SHELL_TITLE}</title>"
+expect_neutral_shell
 
 echo "==> unknown blog URLs are real 404s"
 fetch '/blog/does-not-exist'
@@ -262,14 +293,18 @@ echo "==> a prefix location keeps its trailing slash"
 fetch '/assets/'
 expect_no_redirect
 
-# --- scenario: existing routes are unaffected ---------------------------------
+# --- scenario: public pages are prerendered, app routes are not ---------------
 
-# Public routes serve the shell today. Once the build bakes a page for each, the
-# assertion tightens to that page's title; the 200 is the part that must not move.
-echo "==> public routes are served"
-for route in '/' '/pricing' '/privacy' '/contact' '/terms'; do
-  serves_shell "$route"
-done
+# Every public page is served with its own head and its own text. The titles and
+# headings are the page registry's (src/config/pages.ts), spelled out here on
+# purpose: this is the one check that reads what nginx really sends.
+echo "==> public pages are served prerendered"
+serves_baked '/' "$SHELL_TITLE" 'Stop Re-prompting.<br>Start Kolewoofing.'
+expect_contains '"@type":"SoftwareApplication"'
+serves_baked '/pricing' 'Pricing — Koleslaw' 'Pricing'
+serves_baked '/contact' 'Contact — Koleslaw' 'Contact Us'
+serves_baked '/terms' 'Terms of Service — Koleslaw' 'Terms of Service'
+serves_baked '/privacy' 'Privacy Policy — Koleslaw' 'Privacy Policy'
 
 # App routes never get a baked page — there is nothing public to prerender — so
 # the shell is the permanent answer, and a bookmarked one must still boot.
