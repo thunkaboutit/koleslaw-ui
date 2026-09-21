@@ -13,6 +13,7 @@ import {
   type JsonLdNode,
 } from '../json-ld'
 import type { BlogPost } from '../blog-render'
+import { PRICING_PLANS, featureText } from '../../src/content/pricing'
 
 function post(overrides: Partial<BlogPost> = {}): BlogPost {
   return {
@@ -109,23 +110,28 @@ describe('softwareApplicationNode', () => {
     expect(node['publisher']).toEqual({ '@id': ORGANIZATION_ID })
   })
 
-  it('offers the free and pro tiers', () => {
-    expect(softwareApplicationNode('anything')['offers']).toEqual([
-      {
-        '@type': 'Offer',
-        name: 'Free',
-        price: '0',
-        priceCurrency: 'USD',
-        description: '50 enhances a day per API key',
-      },
-      {
-        '@type': 'Offer',
-        name: 'Pro',
-        price: '10.00',
-        priceCurrency: 'USD',
-        description: '500 enhances a day per API key, billed monthly',
-      },
-    ])
+  function offers(): JsonLdNode[] {
+    return softwareApplicationNode('anything')['offers'] as JsonLdNode[]
+  }
+
+  it('offers the free and pro tiers, priced as the plans price them', () => {
+    expect(offers().map((offer) => offer['@type'])).toEqual(['Offer', 'Offer'])
+    expect(offers().map((offer) => offer['name'])).toEqual(['Free', 'Pro'])
+    expect(offers().map((offer) => offer['price'])).toEqual(['0', '10.00'])
+    expect(offers().map((offer) => offer['priceCurrency'])).toEqual(['USD', 'USD'])
+  })
+
+  it('describes an offer with the features of its plan, in one readable line', () => {
+    const pro = offers().find((offer) => offer['name'] === 'Pro')
+    const plan = PRICING_PLANS.find((candidate) => candidate.name === 'Pro')
+
+    expect(String(pro?.['description']).split('; ')).toEqual(plan?.features.map(featureText))
+  })
+
+  /** An Offer with no price reads as free, which Teams is not. */
+  it('leaves out the plan that quotes no price', () => {
+    expect(offers().map((offer) => offer['name'])).not.toContain('Teams')
+    expect(offers()).toHaveLength(PRICING_PLANS.filter((plan) => plan.amount).length)
   })
 
   it('reports no ratings or reviews, because none exist', () => {
@@ -204,8 +210,15 @@ describe('blogPostingNode', () => {
     expect(JSON.stringify(node)).not.toContain('Person')
   })
 
-  it('invents no dateModified', () => {
+  it('omits dateModified when the post declares no update', () => {
     expect(blogPostingNode(post(), undefined)).not.toHaveProperty('dateModified')
+  })
+
+  it('publishes the declared update as dateModified', () => {
+    const node = blogPostingNode(post({ updated: '2026-08-17' }), undefined)
+
+    expect(node['dateModified']).toBe('2026-08-17')
+    expect(node['datePublished']).toBe('2026-08-01')
   })
 
   it('joins tags into keywords', () => {

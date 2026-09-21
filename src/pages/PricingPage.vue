@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { usePageSeo } from '@/composables/useSeo'
 import { BILLING_PORTAL_LOGIN_URL, proCheckoutUrl } from '@/config/billing'
+import { PRICING_NOTE, PRICING_PLANS, PRICING_TAGLINE } from '@/content/pricing'
 
 const page = usePageSeo('pricing')
 
@@ -15,79 +16,65 @@ const checkoutUrl = computed(() => (auth.user ? proCheckoutUrl(auth.user.id, aut
 <template>
   <div class="pricing-page">
     <h1>{{ page.heading }}</h1>
-    <p class="pricing__sub">Start free. Upgrade when you outgrow the limits.</p>
+    <p class="pricing__sub">{{ PRICING_TAGLINE }}</p>
 
+    <!-- One card per plan, so the cards and the body the build bakes for
+         crawlers cannot drift apart. The calls to action are the exception:
+         they turn on who is signed in and on Stripe, not on the plan's copy. -->
     <div class="pricing__grid">
-      <!-- Free -->
-      <div class="pricing__card">
-        <h2 class="pricing__tier">Free</h2>
-        <p class="pricing__price">$0<span class="pricing__period">/month</span></p>
+      <div
+        v-for="plan in PRICING_PLANS"
+        :key="plan.name"
+        class="pricing__card"
+        :class="{ 'pricing__card--featured': plan.featured }"
+      >
+        <h2 class="pricing__tier">{{ plan.name }}</h2>
+        <p class="pricing__price" :class="{ 'pricing__price--talk': plan.period === undefined }">
+          {{ plan.price }}<span v-if="plan.period" class="pricing__period">{{ plan.period }}</span>
+        </p>
         <ul class="pricing__features">
-          <li>50 enhances/day per API key</li>
-          <li>60 requests/min</li>
-          <li>VS Code, JetBrains, Chrome &amp; Claude Code clients</li>
-          <li>Community support</li>
+          <li v-for="feature in plan.features" :key="feature.text">
+            <strong v-if="feature.lead">{{ feature.lead }}</strong
+            >{{ feature.text }}
+          </li>
         </ul>
-        <RouterLink v-if="!auth.user" to="/signup" class="pricing__cta pricing__cta--secondary"
-          >Create a free account</RouterLink
-        >
-        <RouterLink v-else to="/keys" class="pricing__cta pricing__cta--secondary"
-          >Create an API key</RouterLink
-        >
-      </div>
-
-      <!-- Pro -->
-      <div class="pricing__card pricing__card--featured">
-        <h2 class="pricing__tier">Pro</h2>
-        <p class="pricing__price">$10<span class="pricing__period">/month</span></p>
-        <ul class="pricing__features">
-          <li><strong>500</strong> enhances/day per API key</li>
-          <li>60 requests/min</li>
-          <li>All clients + direct API access</li>
-          <li>Priority support</li>
-          <li>Cancel anytime</li>
-        </ul>
-        <template v-if="isPro">
-          <p class="pricing__current">You're on Pro ✓</p>
-          <a
-            :href="BILLING_PORTAL_LOGIN_URL"
-            target="_blank"
-            rel="noopener"
-            class="pricing__cta pricing__cta--secondary"
-            >Manage billing</a
+        <template v-if="plan.name === 'Free'">
+          <RouterLink v-if="!auth.user" to="/signup" class="pricing__cta pricing__cta--secondary"
+            >Create a free account</RouterLink
+          >
+          <RouterLink v-else to="/keys" class="pricing__cta pricing__cta--secondary"
+            >Create an API key</RouterLink
           >
         </template>
-        <a
-          v-else-if="auth.user && checkoutUrl"
-          :href="checkoutUrl"
-          class="pricing__cta pricing__cta--primary"
-          >Upgrade to Pro</a
-        >
-        <RouterLink v-else-if="!auth.user" to="/login" class="pricing__cta pricing__cta--primary"
-          >Sign in to upgrade</RouterLink
-        >
-        <span v-else class="pricing__cta pricing__cta--disabled">Coming shortly</span>
-      </div>
-
-      <!-- Teams -->
-      <div class="pricing__card">
-        <h2 class="pricing__tier">Teams</h2>
-        <p class="pricing__price pricing__price--talk">Let's talk</p>
-        <ul class="pricing__features">
-          <li>House prompt structure for the whole team</li>
-          <li>Per-developer usage attribution</li>
-          <li>SSO &amp; admin controls</li>
-          <li>Custom limits &amp; SLAs</li>
-        </ul>
-        <RouterLink to="/contact" class="pricing__cta pricing__cta--secondary"
+        <template v-else-if="plan.name === 'Pro'">
+          <template v-if="isPro">
+            <p class="pricing__current">You're on Pro ✓</p>
+            <a
+              :href="BILLING_PORTAL_LOGIN_URL"
+              target="_blank"
+              rel="noopener"
+              class="pricing__cta pricing__cta--secondary"
+              >Manage billing</a
+            >
+          </template>
+          <a
+            v-else-if="auth.user && checkoutUrl"
+            :href="checkoutUrl"
+            class="pricing__cta pricing__cta--primary"
+            >Upgrade to Pro</a
+          >
+          <RouterLink v-else-if="!auth.user" to="/login" class="pricing__cta pricing__cta--primary"
+            >Sign in to upgrade</RouterLink
+          >
+          <span v-else class="pricing__cta pricing__cta--disabled">Coming shortly</span>
+        </template>
+        <RouterLink v-else to="/contact" class="pricing__cta pricing__cta--secondary"
           >Talk to us</RouterLink
         >
       </div>
     </div>
 
-    <p class="pricing__note">
-      The playground on the home page stays free for everyone — 10 enhances/day, no account needed.
-    </p>
+    <p class="pricing__note">{{ PRICING_NOTE }}</p>
   </div>
 </template>
 

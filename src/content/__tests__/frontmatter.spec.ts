@@ -89,6 +89,36 @@ describe('parsePost', () => {
     expect(() => parsePost(withFrontmatter([...MINIMAL, 'series: A series']))).toThrow(/"part"/)
   })
 
+  it('reads a declared update date', () => {
+    const { frontmatter } = parsePost(withFrontmatter([...MINIMAL, 'updated: 2026-08-17']))
+
+    expect(frontmatter.updated).toBe('2026-08-17')
+  })
+
+  it('leaves out the updated key entirely when no update is declared', () => {
+    const { frontmatter } = parsePost(withFrontmatter(MINIMAL))
+
+    expect('updated' in frontmatter).toBe(false)
+  })
+
+  it('allows an update on the day the post published', () => {
+    const { frontmatter } = parsePost(withFrontmatter([...MINIMAL, 'updated: 2026-08-01']))
+
+    expect(frontmatter.updated).toBe('2026-08-01')
+  })
+
+  it('rejects a non-ISO updated date', () => {
+    expect(() => parsePost(withFrontmatter([...MINIMAL, 'updated: Aug 2026']))).toThrow(
+      /updated must be YYYY-MM-DD/,
+    )
+  })
+
+  it('rejects an update that predates the post, naming the file and both dates', () => {
+    expect(() =>
+      parsePost(withFrontmatter([...MINIMAL, 'updated: 2026-07-31']), 'src/content/blog/back.md'),
+    ).toThrow(/src\/content\/blog\/back\.md: updated 2026-07-31 is earlier than date 2026-08-01/)
+  })
+
   it('names the offending file in errors', () => {
     expect(() => parsePost('no frontmatter', 'src/content/blog/broken.md')).toThrow(
       /src\/content\/blog\/broken\.md/,

@@ -56,6 +56,8 @@ function setSectionRef(idx: number) {
             :src="mascotSrc"
             alt="Koleslaw mascot — a cartoon cow saying Woof?"
             class="hero__mascot"
+            width="1998"
+            height="1682"
           />
           <!-- Floating code bracket icons -->
           <span class="floating-icon floating-icon--1" aria-hidden="true">

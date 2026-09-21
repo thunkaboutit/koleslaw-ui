@@ -90,6 +90,16 @@ expect_redirect() {
   esac
 }
 
+# Walks the redirect chain the way a browser or a crawler does. A 301 that ends
+# on another 301, or on a 404, is not one URL per page, and a chain that loops
+# makes curl give up here instead of hanging. Only the final status is judged,
+# so $location is cleared: the header dump holds every hop, not just the last.
+follow() {
+  status="$(curl -sS -L --max-redirs 5 -o "$BODY" -D "$HEADERS" -w '%{http_code}' "${BASE}${1}")" \
+    || status='no settled response'
+  location=''
+}
+
 expect_contains() {
   if grep -qF -- "$1" "$BODY"; then ok "contains: $1"; else bad "missing: $1"; fi
 }
@@ -293,6 +303,64 @@ echo "==> a prefix location keeps its trailing slash"
 fetch '/assets/'
 expect_no_redirect
 
+# --- scenario: the .html files are not a second URL for every page ------------
+#
+# The build writes one .html per public page and nginx serves it at the clean
+# URL. Left reachable under its own name, every page also existed at a second
+# URL, which is the duplication the canonical tags were papering over. The file
+# name redirects to the URL the page is served at, so there is only one.
+
+echo "==> a baked page's .html file redirects to its clean URL"
+fetch '/pricing.html'
+expect_status 301
+expect_redirect '/pricing'
+
+fetch '/blog.html'
+expect_status 301
+expect_redirect '/blog'
+
+fetch "/blog/${SLUG}.html"
+expect_status 301
+expect_redirect "/blog/${SLUG}"
+
+# home.html is the odd one out: stripping the extension would point at /home,
+# which the app does not serve. The home page's URL is "/".
+echo "==> home.html redirects to /"
+fetch '/home.html'
+expect_status 301
+expect_redirect '/'
+
+# index.html is not a page at all: it is the neutral shell nginx hands out for
+# app routes and as the body of every 404. Asked for by name it gets the answer
+# any other URL the site does not serve gets, body included.
+echo "==> index.html is an implementation detail, not a URL"
+fetch '/index.html'
+expect_status 404
+expect_contains "<title>${SHELL_TITLE}</title>"
+expect_neutral_shell
+
+# The failure mode to fear. try_files serves pricing.html for /pricing, and if
+# that ever re-entered location matching it would hit the redirect above and
+# bounce straight back. A loop leaves curl giving up here rather than hanging;
+# the heading proves the chain ended on the page, not on another redirect.
+echo "==> following the redirect lands on the page"
+follow '/pricing.html'
+expect_status 200
+expect_contains '<h1>Pricing</h1>'
+
+follow '/home.html'
+expect_status 200
+expect_contains '<h1>Stop Re-prompting.<br>Start Kolewoofing.</h1>'
+
+# A regex location outranks every plain prefix location, so the redirect above
+# can see inside /assets/, /auth/ and /v1/ unless those prefixes claim their own
+# URLs outright. /assets/ stands in for the proxied two, as it does for the
+# trailing-slash rule: a hashed asset must 404 when it is gone, never redirect.
+echo "==> a prefix location keeps its own URLs"
+fetch '/assets/nope-12345.html'
+expect_status 404
+expect_no_redirect
+
 # --- scenario: public pages are prerendered, app routes are not ---------------
 
 # Every public page is served with its own head and its own text. The titles and
@@ -302,6 +370,11 @@ echo "==> public pages are served prerendered"
 serves_baked '/' "$SHELL_TITLE" 'Stop Re-prompting.<br>Start Kolewoofing.'
 expect_contains '"@type":"SoftwareApplication"'
 serves_baked '/pricing' 'Pricing — Koleslaw' 'Pricing'
+# The plans themselves, not a sentence about them: they come from
+# src/content/pricing.ts, the same data the page's cards are drawn from.
+expect_contains '<h2>Pro</h2>'
+expect_contains '$10/month'
+expect_contains '500 enhances/day per API key'
 serves_baked '/contact' 'Contact — Koleslaw' 'Contact Us'
 serves_baked '/terms' 'Terms of Service — Koleslaw' 'Terms of Service'
 serves_baked '/privacy' 'Privacy Policy — Koleslaw' 'Privacy Policy'

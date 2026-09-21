@@ -6,6 +6,7 @@ import {
   SITE_URL,
   postUrl,
 } from '../src/config/site'
+import { PRICING_PLANS, featureText } from '../src/content/pricing'
 import { publishedPosts, type BlogPost } from './blog-render'
 
 /**
@@ -44,25 +45,17 @@ const ORGANIZATION_SAME_AS = [
 const LANGUAGE = 'en'
 
 /**
- * The two plans with a price. The pricing page also shows Teams ("Let's talk"),
- * which has no price to state, and an Offer without one is worse than none.
+ * The plans that quote a price, from the same data the page and the baked body
+ * read — a price stated twice is a price that gets changed once. Teams ("Let's
+ * talk") has no price to state, and an Offer without one reads as free.
  */
-const OFFERS = [
-  {
-    '@type': 'Offer',
-    name: 'Free',
-    price: '0',
-    priceCurrency: 'USD',
-    description: '50 enhances a day per API key',
-  },
-  {
-    '@type': 'Offer',
-    name: 'Pro',
-    price: '10.00',
-    priceCurrency: 'USD',
-    description: '500 enhances a day per API key, billed monthly',
-  },
-]
+const OFFERS = PRICING_PLANS.filter((plan) => plan.amount !== undefined).map((plan) => ({
+  '@type': 'Offer',
+  name: plan.name,
+  price: plan.amount,
+  priceCurrency: 'USD',
+  description: plan.features.map(featureText).join('; '),
+}))
 
 /** A pointer at a node declared elsewhere in the same graph. */
 function ref(id: string): JsonLdNode {
@@ -143,8 +136,11 @@ export function blogNode(posts: BlogPost[]): JsonLdNode {
  *
  * The author is the organization, deliberately: the blog carries no personal
  * byline, and a Person node would be structured data the pages do not show.
- * There is no dateModified either — posts do not track one, and a guessed date
- * is worse than none.
+ *
+ * dateModified appears only when the post's frontmatter declares `updated`, and
+ * never falls back to the publish date: a guessed modification date is worse
+ * than none. The page prints the same "Updated" line the node claims, so the
+ * structured data says nothing a reader cannot see.
  *
  * @param image Absolute card URL, or undefined. The key is omitted entirely
  *              when there is no art, mirroring how blog-render drops og:image.
@@ -157,6 +153,7 @@ export function blogPostingNode(post: BlogPost, image: string | undefined): Json
     headline: post.title,
     description: post.description,
     datePublished: post.date,
+    ...(post.updated === undefined ? {} : { dateModified: post.updated }),
     url,
     mainEntityOfPage: url,
     inLanguage: LANGUAGE,

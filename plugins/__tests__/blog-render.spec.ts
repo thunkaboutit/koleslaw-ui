@@ -99,6 +99,21 @@ describe('buildPage', () => {
     expect(html).toContain('<meta property="article:published_time" content="2026-09-14">')
   })
 
+  it('stamps a declared update right after the publish date', () => {
+    const html = buildPage(SHELL, meta({ publishedTime: '2026-07-29', modifiedTime: '2026-08-17' }))
+
+    expect(html).toContain(
+      [
+        '<meta property="article:published_time" content="2026-07-29">',
+        '    <meta property="article:modified_time" content="2026-08-17">',
+      ].join('\n'),
+    )
+  })
+
+  it('omits the modified date when the post declares no update', () => {
+    expect(buildPage(SHELL, meta())).not.toContain('article:modified_time')
+  })
+
   it('omits the publish date on non-article pages', () => {
     const html = buildPage(SHELL, meta({ type: 'website', publishedTime: undefined }))
 
@@ -295,6 +310,16 @@ describe('renderSitemap', () => {
     expect(locations).toContain('https://koleslaw.ai/blog/quantization')
     expect(xml).toContain(
       '<loc>https://koleslaw.ai/blog/quantization</loc><lastmod>2026-08-01</lastmod>',
+    )
+  })
+
+  it('dates lastmod from the declared update rather than the publish date', () => {
+    const xml = renderSitemap([
+      post({ slug: 'quantization', date: '2026-08-01', updated: '2026-09-14' }),
+    ])
+
+    expect(xml).toContain(
+      '<loc>https://koleslaw.ai/blog/quantization</loc><lastmod>2026-09-14</lastmod>',
     )
   })
 
