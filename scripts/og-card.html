@@ -5,10 +5,14 @@
     <title>Koleslaw blog social card</title>
 
     <!--
-      Source for public/og/default.png, the fallback social card for every blog
-      post. Rendered by scripts/render-og-card.sh with headless Chrome, which is
-      why this is a real page: it uses the site's own palette, fonts, grain, and
-      mascot, so the card cannot drift away from the site by hand-copying.
+      Source for every social card under public/og/. Rendered by
+      scripts/render-og-card.sh with headless Chrome, which is why this is a
+      real page: it uses the site's own palette, fonts, grain, and mascot, so
+      the card cannot drift away from the site by hand-copying.
+
+      With no query string this is public/og/default.png, the fallback card.
+      With ?title= it is one post's card, so the two can never fall out of
+      sync: there is one template, not a forked copy per post.
 
       Edit here, re-run the script, commit both files.
     -->
@@ -87,6 +91,20 @@
         color: var(--wl-navy);
       }
 
+      /* A post title is three to five times the length of the blog's own
+         headline, so it has to wrap. Two steps down are enough to keep the
+         longest published title (49 characters) off the mascot and inside the
+         630px frame; the threshold is in the script below. */
+      h1.wrapped {
+        font-size: 58px;
+        line-height: 1.12;
+        white-space: normal;
+      }
+
+      h1.wrapped.long {
+        font-size: 48px;
+      }
+
       .rule {
         display: flex;
         align-items: center;
@@ -157,5 +175,23 @@
         <img src="../src/assets/koleslaw-logo-mascot-woof.svg" alt="" />
       </div>
     </div>
+
+    <script>
+      // Post cards are this same page with ?title=. Nothing below runs without
+      // one, so the default card's source of truth is the markup above.
+      //
+      // textContent, never innerHTML: a post title is arbitrary prose and one
+      // of them already contains quotes.
+      const title = new URLSearchParams(location.search).get('title')
+
+      if (title) {
+        const headline = document.querySelector('h1')
+        headline.textContent = title
+        headline.classList.add('wrapped')
+        // Past this length the title needs three lines at 58px, which runs
+        // the copy column into the tags and off the bottom of the card.
+        if (title.length > 44) headline.classList.add('long')
+      }
+    </script>
   </body>
 </html>

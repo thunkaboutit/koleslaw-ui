@@ -6,6 +6,7 @@ series: Cutting a 30B model's hosting bill
 part: 1
 tags: [ quantization, gguf, llama.cpp, gpu, koleslaw ]
 draft: false
+ogImage: /og/the-quantization-that-didnt-fit.png
 ---
 
 The GPU bill was $1,360 a month. That bought one graphics card in AWS, serving one model for a pet project you have

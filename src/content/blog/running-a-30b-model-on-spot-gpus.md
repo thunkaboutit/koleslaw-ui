@@ -6,6 +6,7 @@ series: Cutting a 30B model's hosting bill
 part: 2
 tags: [ aws, spot, autoscaling, gpu, koleslaw ]
 draft: false
+ogImage: /og/running-a-30b-model-on-spot-gpus.png
 ---
 
 ```text
