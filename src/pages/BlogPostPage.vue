@@ -34,6 +34,7 @@ useSeo(() => {
     canonical: postUrl(current.slug),
     type: 'article',
     publishedTime: current.date,
+    ...(current.updated === undefined ? {} : { modifiedTime: current.updated }),
     ...(current.ogImage === undefined ? {} : { image: current.ogImage }),
   }
 })
@@ -51,7 +52,15 @@ watch(slug, () => window.scrollTo({ top: 0 }))
 
       <header class="post-page__header">
         <div class="post-page__meta">
-          <time :datetime="post.date">{{ formatPostDate(post.date) }}</time>
+          <!-- Both dates in one inline span so the row's flex gap still falls
+               between the dates and the Draft badge, not inside the line. -->
+          <span>
+            <time :datetime="post.date">{{ formatPostDate(post.date) }}</time>
+            <template v-if="post.updated">
+              · Updated
+              <time :datetime="post.updated">{{ formatPostDate(post.updated) }}</time>
+            </template>
+          </span>
           <span v-if="post.draft" class="post-page__draft">Draft</span>
         </div>
 

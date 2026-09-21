@@ -143,8 +143,11 @@ export function blogNode(posts: BlogPost[]): JsonLdNode {
  *
  * The author is the organization, deliberately: the blog carries no personal
  * byline, and a Person node would be structured data the pages do not show.
- * There is no dateModified either — posts do not track one, and a guessed date
- * is worse than none.
+ *
+ * dateModified appears only when the post's frontmatter declares `updated`, and
+ * never falls back to the publish date: a guessed modification date is worse
+ * than none. The page prints the same "Updated" line the node claims, so the
+ * structured data says nothing a reader cannot see.
  *
  * @param image Absolute card URL, or undefined. The key is omitted entirely
  *              when there is no art, mirroring how blog-render drops og:image.
@@ -157,6 +160,7 @@ export function blogPostingNode(post: BlogPost, image: string | undefined): Json
     headline: post.title,
     description: post.description,
     datePublished: post.date,
+    ...(post.updated === undefined ? {} : { dateModified: post.updated }),
     url,
     mainEntityOfPage: url,
     inLanguage: LANGUAGE,

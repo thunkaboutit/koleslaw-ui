@@ -13,6 +13,8 @@ export interface SeoTags {
   type?: string
   /** ISO date, emitted as article:published_time. */
   publishedTime?: string
+  /** ISO date of the last declared edit, emitted as article:modified_time. */
+  modifiedTime?: string
 }
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string): void {
@@ -59,6 +61,7 @@ export function useSeo(tags: MaybeRefOrGetter<SeoTags>): void {
       image = DEFAULT_OG_IMAGE,
       type = 'website',
       publishedTime,
+      modifiedTime,
     } = toValue(tags)
 
     const absoluteImage = image.startsWith('http') ? image : `${SITE_URL}${image}`
@@ -81,6 +84,10 @@ export function useSeo(tags: MaybeRefOrGetter<SeoTags>): void {
 
     if (publishedTime !== undefined) {
       upsertMeta('property', 'article:published_time', publishedTime)
+    }
+
+    if (modifiedTime !== undefined) {
+      upsertMeta('property', 'article:modified_time', modifiedTime)
     }
   })
 

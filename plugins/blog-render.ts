@@ -24,6 +24,8 @@ export interface PageMeta {
   image: string | undefined
   type: string
   publishedTime?: string
+  /** ISO date of the last declared edit. Undefined when the author declared none. */
+  modifiedTime?: string
 }
 
 /**
@@ -81,6 +83,13 @@ function renderHead(meta: PageMeta): string {
 
   if (meta.publishedTime !== undefined) {
     tags.push(['property', 'article:published_time', meta.publishedTime])
+  }
+
+  // Only when the author declared an edit. An absent tag says "never revised",
+  // which is true; a tag echoing the publish date would say it was revised on
+  // the day it went up, which is not.
+  if (meta.modifiedTime !== undefined) {
+    tags.push(['property', 'article:modified_time', meta.modifiedTime])
   }
 
   const rendered = tags
@@ -170,7 +179,11 @@ export function renderSitemap(posts: BlogPost[]): string {
   const urls = [
     ...STATIC_ROUTES.map((route) => `  <url><loc>${SITE_URL}${route}</loc></url>`),
     ...publishedPosts(posts).map((post) => {
-      return `  <url><loc>${postUrl(post.slug)}</loc><lastmod>${post.date}</lastmod></url>`
+      // The last declared edit, falling back to the publish date: lastmod is a
+      // claim about the document, and an edited post whose lastmod never moves
+      // tells a crawler not to come back for the new text.
+      const lastmod = post.updated ?? post.date
+      return `  <url><loc>${postUrl(post.slug)}</loc><lastmod>${lastmod}</lastmod></url>`
     }),
   ].join('\n')
 

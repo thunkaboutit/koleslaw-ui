@@ -74,6 +74,21 @@ describe('useSeo', () => {
     expect(content('name', 'twitter:image')).toBe('https://koleslaw.ai/og/default.png')
   })
 
+  it('stamps the article dates it is given', () => {
+    mountWith(() =>
+      useSeo(seo({ type: 'article', publishedTime: '2026-07-29', modifiedTime: '2026-08-17' })),
+    )
+
+    expect(content('property', 'article:published_time')).toBe('2026-07-29')
+    expect(content('property', 'article:modified_time')).toBe('2026-08-17')
+  })
+
+  it('leaves out the modified date when the post declares no update', () => {
+    mountWith(() => useSeo(seo({ type: 'article', publishedTime: '2026-07-29' })))
+
+    expect(metas('property', 'article:modified_time')).toEqual([])
+  })
+
   it('updates a baked tag rather than adding a second one', () => {
     const description = bake('name', 'description', 'The baked description.')
     const link = document.createElement('link')

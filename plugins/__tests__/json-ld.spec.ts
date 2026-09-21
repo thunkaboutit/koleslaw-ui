@@ -204,8 +204,15 @@ describe('blogPostingNode', () => {
     expect(JSON.stringify(node)).not.toContain('Person')
   })
 
-  it('invents no dateModified', () => {
+  it('omits dateModified when the post declares no update', () => {
     expect(blogPostingNode(post(), undefined)).not.toHaveProperty('dateModified')
+  })
+
+  it('publishes the declared update as dateModified', () => {
+    const node = blogPostingNode(post({ updated: '2026-08-17' }), undefined)
+
+    expect(node['dateModified']).toBe('2026-08-17')
+    expect(node['datePublished']).toBe('2026-08-01')
   })
 
   it('joins tags into keywords', () => {

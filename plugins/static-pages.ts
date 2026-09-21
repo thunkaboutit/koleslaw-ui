@@ -155,6 +155,9 @@ function bakePost(post: SourcePost, sources: SiteSources): BakedPage {
       image,
       type: 'article',
       publishedTime: post.date,
+      // Spread rather than assigned, so an undeclared update leaves no key at
+      // all — the same shape the frontmatter parser hands back.
+      ...(post.updated === undefined ? {} : { modifiedTime: post.updated }),
     },
     jsonLd: [
       organizationNode(),

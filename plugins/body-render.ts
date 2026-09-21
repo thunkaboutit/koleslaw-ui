@@ -65,8 +65,23 @@ function formatDate(date: string): string {
 }
 
 /** Machine-readable date beside the human one, for anything parsing the page. */
-function dateLine(date: string): string {
-  return `<p><time datetime="${escapeHtml(date)}">${escapeHtml(formatDate(date))}</time></p>`
+function timeTag(date: string): string {
+  return `<time datetime="${escapeHtml(date)}">${escapeHtml(formatDate(date))}</time>`
+}
+
+/**
+ * The post's dates: published, and the last declared edit when there is one.
+ *
+ * The edit gets its own `<time>` rather than a second date inside the first:
+ * the page's JSON-LD claims a dateModified, and this is the visible half of
+ * that claim, so it has to be as machine-readable as the claim is.
+ */
+function dateLine(date: string, updated?: string): string {
+  const published = timeTag(date)
+
+  return updated === undefined
+    ? `<p>${published}</p>`
+    : `<p>${published} · Updated ${timeTag(updated)}</p>`
 }
 
 /** `.prose` is global (src/assets/prose.css), so this is styled before boot. */
@@ -189,7 +204,7 @@ export function renderPostBody(input: {
   return wrap([
     '<article>',
     `<p>${anchor('/blog', '← All posts')}</p>`,
-    dateLine(post.date),
+    dateLine(post.date, post.updated),
     `<h1>${escapeHtml(post.title)}</h1>`,
     series,
     prose(html),
