@@ -1,6 +1,7 @@
 import { STATIC_PAGES, pageUrl, staticPage, type StaticPage } from '../src/config/pages'
 import { BLOG_TITLE, CHROME_STORE_URL, postUrl } from '../src/config/site'
 import { HOME_HERO } from '../src/content/home'
+import { PRICING_NOTE, PRICING_PLANS, PRICING_TAGLINE } from '../src/content/pricing'
 import { buildPage, publishedPosts, type BlogPost, type PageMeta } from './blog-render'
 import {
   injectBody,
@@ -9,6 +10,7 @@ import {
   renderHomeBody,
   renderPageBody,
   renderPostBody,
+  renderPricingBody,
   renderSiteNav,
   type NavLink,
 } from './body-render'
@@ -99,6 +101,13 @@ function staticBody(page: StaticPage, sources: SiteSources): string {
       })
     case 'blog':
       return renderBlogIndexBody(sources.posts)
+    case 'pricing':
+      return renderPricingBody({
+        heading: page.heading,
+        tagline: PRICING_TAGLINE,
+        plans: PRICING_PLANS,
+        note: PRICING_NOTE,
+      })
     case 'terms':
     case 'privacy':
       return renderDocumentBody(

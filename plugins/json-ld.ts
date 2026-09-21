@@ -6,6 +6,7 @@ import {
   SITE_URL,
   postUrl,
 } from '../src/config/site'
+import { PRICING_PLANS, featureText } from '../src/content/pricing'
 import { publishedPosts, type BlogPost } from './blog-render'
 
 /**
@@ -44,25 +45,17 @@ const ORGANIZATION_SAME_AS = [
 const LANGUAGE = 'en'
 
 /**
- * The two plans with a price. The pricing page also shows Teams ("Let's talk"),
- * which has no price to state, and an Offer without one is worse than none.
+ * The plans that quote a price, from the same data the page and the baked body
+ * read — a price stated twice is a price that gets changed once. Teams ("Let's
+ * talk") has no price to state, and an Offer without one reads as free.
  */
-const OFFERS = [
-  {
-    '@type': 'Offer',
-    name: 'Free',
-    price: '0',
-    priceCurrency: 'USD',
-    description: '50 enhances a day per API key',
-  },
-  {
-    '@type': 'Offer',
-    name: 'Pro',
-    price: '10.00',
-    priceCurrency: 'USD',
-    description: '500 enhances a day per API key, billed monthly',
-  },
-]
+const OFFERS = PRICING_PLANS.filter((plan) => plan.amount !== undefined).map((plan) => ({
+  '@type': 'Offer',
+  name: plan.name,
+  price: plan.amount,
+  priceCurrency: 'USD',
+  description: plan.features.map(featureText).join('; '),
+}))
 
 /** A pointer at a node declared elsewhere in the same graph. */
 function ref(id: string): JsonLdNode {

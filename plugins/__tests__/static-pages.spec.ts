@@ -10,6 +10,12 @@ import {
   type SourcePost,
 } from '../static-pages'
 import { HOME_HERO } from '../../src/content/home'
+import {
+  PRICING_NOTE,
+  PRICING_PLANS,
+  PRICING_TAGLINE,
+  featureText,
+} from '../../src/content/pricing'
 import { STATIC_PAGES, pageUrl, staticPage } from '../../src/config/pages'
 import { BLOG_TITLE, CHROME_STORE_URL, SITE_TITLE } from '../../src/config/site'
 
@@ -184,14 +190,36 @@ describe('sitePages', () => {
     expect(app?.['description']).toBe(staticPage('home').description)
   })
 
-  it('bakes the pricing and contact pages as heading plus description', () => {
-    for (const name of ['pricing', 'contact'] as const) {
-      const entry = staticPage(name)
-      const document = parse(page(`${name}.html`).body)
+  it('bakes the contact page as heading plus description', () => {
+    const entry = staticPage('contact')
+    const document = parse(page('contact.html').body)
 
-      expect(document.querySelector('h1')?.textContent).toBe(entry.heading)
-      expect(document.body.textContent).toContain(entry.description)
-    }
+    expect(document.querySelector('h1')?.textContent).toBe(entry.heading)
+    expect(document.body.textContent).toContain(entry.description)
+  })
+
+  /**
+   * The one page people search for by price, so the sentence in the registry is
+   * not enough: every plan, price and limit the cards show has to be in the
+   * HTML a crawler is served, in the words the app uses.
+   */
+  it('bakes the pricing page as the plans themselves', () => {
+    const document = parse(page('pricing.html').body)
+    const sections = [...document.querySelectorAll('main section')]
+    const features = [...document.querySelectorAll('main section li')]
+
+    expect(document.querySelector('h1')?.textContent).toBe(staticPage('pricing').heading)
+    expect(document.body.textContent).toContain(PRICING_TAGLINE)
+    expect(sections.map((section) => section.querySelector('h2')?.textContent)).toEqual(
+      PRICING_PLANS.map((plan) => plan.name),
+    )
+    expect(sections.map((section) => section.querySelector('p')?.textContent)).toEqual(
+      PRICING_PLANS.map((plan) => `${plan.price}${plan.period ?? ''}`),
+    )
+    expect(features.map((feature) => feature.textContent)).toEqual(
+      PRICING_PLANS.flatMap((plan) => plan.features.map(featureText)),
+    )
+    expect(document.body.textContent).toContain(PRICING_NOTE)
   })
 
   it('bakes the policies from their markdown, under the page heading alone', () => {

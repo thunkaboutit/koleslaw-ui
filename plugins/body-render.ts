@@ -1,4 +1,5 @@
 import { BLOG_DESCRIPTION, BLOG_TITLE } from '../src/config/site'
+import { featureText, type PricingPlan } from '../src/content/pricing'
 import { escapeHtml, publishedPosts, type BlogPost } from './blog-render'
 
 /**
@@ -135,6 +136,45 @@ export function renderHomeBody(hero: HeroCopy): string {
 
 export function renderPageBody(page: { heading: string; description: string }): string {
   return wrap([`<h1>${escapeHtml(page.heading)}</h1>`, `<p>${escapeHtml(page.description)}</p>`])
+}
+
+/** "$10/month", or the plan's own words where there is no amount to qualify. */
+function priceLine(plan: PricingPlan): string {
+  return `${plan.price}${plan.period ?? ''}`
+}
+
+/**
+ * The pricing page, plan by plan.
+ *
+ * The cards are the page: baking the heading and the meta sentence alone left
+ * every price, limit and client out of the HTML a crawler is served, on the one
+ * page people search for by price. The copy arrives from src/content/pricing.ts,
+ * which the Vue page reads too, so the two cannot say different numbers.
+ */
+export function renderPricingBody(input: {
+  heading: string
+  tagline: string
+  plans: readonly PricingPlan[]
+  note: string
+}): string {
+  const plans = input.plans.map((plan) =>
+    [
+      '<section>',
+      `<h2>${escapeHtml(plan.name)}</h2>`,
+      `<p>${escapeHtml(priceLine(plan))}</p>`,
+      '<ul>',
+      ...plan.features.map((feature) => `<li>${escapeHtml(featureText(feature))}</li>`),
+      '</ul>',
+      '</section>',
+    ].join('\n'),
+  )
+
+  return wrap([
+    `<h1>${escapeHtml(input.heading)}</h1>`,
+    `<p>${escapeHtml(input.tagline)}</p>`,
+    ...plans,
+    `<p>${escapeHtml(input.note)}</p>`,
+  ])
 }
 
 /** Privacy and terms: a heading plus markdown this module did not render. */
