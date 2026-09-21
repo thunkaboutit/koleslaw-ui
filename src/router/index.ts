@@ -78,6 +78,13 @@ const router = createRouter({
       name: 'profile',
       component: () => import('@/pages/ProfilePage.vue'),
     },
+    // Last on purpose: it only gets a URL no route above claimed.
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('@/pages/NotFoundPage.vue'),
+      meta: { public: true },
+    },
   ],
 })
 
