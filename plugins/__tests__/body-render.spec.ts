@@ -157,14 +157,30 @@ describe('renderPostBody', () => {
     expect(parse(html).querySelector('script')).toBeNull()
   })
 
-  it('prints the series line when the post is part of a series', () => {
+  it('prints the same series line the app does: position and total', () => {
     const html = renderPostBody({
       post: post({ series: 'Quantization', part: 2 }),
       html: '',
-      others: [],
+      others: [
+        post({ slug: 'first', series: 'Quantization', part: 1 }),
+        post({ slug: 'third', series: 'Quantization', part: 3 }),
+        post({ slug: 'elsewhere', series: 'Spot GPUs', part: 1 }),
+        post({ slug: 'standalone' }),
+      ],
     })
 
-    expect(html).toContain('Quantization · Part 2')
+    expect(html).toContain('Quantization · Part 2 of 3')
+  })
+
+  it('counts neither drafts nor the post twice towards the series total', () => {
+    const current = post({ series: 'Quantization', part: 1 })
+    const html = renderPostBody({
+      post: current,
+      html: '',
+      others: [current, post({ slug: 'unwritten', series: 'Quantization', part: 2, draft: true })],
+    })
+
+    expect(html).toContain('Quantization · Part 1 of 1')
   })
 
   it('omits the series line for a standalone post', () => {

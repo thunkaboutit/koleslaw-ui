@@ -146,6 +146,22 @@ export function renderBlogIndexBody(posts: BlogPost[]): string {
   ])
 }
 
+/**
+ * "Series name · Part 2 of 3", worded and counted the way BlogPostPage does it:
+ * position among the published parts, not the raw `part` number, so an
+ * unpublished part cannot make the baked line disagree with the live one.
+ */
+function seriesLine(post: BlogPost, others: BlogPost[]): string {
+  if (post.series === undefined) return ''
+
+  const parts = publishedPosts([post, ...others.filter((other) => other.slug !== post.slug)])
+    .filter((candidate) => candidate.series === post.series)
+    .sort((a, b) => (a.part ?? 0) - (b.part ?? 0))
+  const position = parts.findIndex((candidate) => candidate.slug === post.slug) + 1
+
+  return `<p>${escapeHtml(`${post.series} · Part ${position} of ${parts.length}`)}</p>`
+}
+
 export function renderPostBody(input: {
   post: BlogPost
   html: string
@@ -153,8 +169,7 @@ export function renderPostBody(input: {
 }): string {
   const { post, html, others } = input
 
-  const series =
-    post.series === undefined ? '' : `<p>${escapeHtml(`${post.series} · Part ${post.part}`)}</p>`
+  const series = seriesLine(post, others)
 
   // publishedPosts drops drafts and orders newest first; the post itself would
   // otherwise link to the page the reader is already on.
