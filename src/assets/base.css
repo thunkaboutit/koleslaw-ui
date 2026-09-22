@@ -42,10 +42,14 @@
   --radius: 6px;
   --radius-lg: 10px;
 
-  /* Typography */
-  --font-heading: 'Fredoka', 'Nunito', sans-serif;
-  --font-body: 'Nunito', 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  /* Typography — the "Variable" families are the self-hosted fontsource
+     builds main.ts imports; the plain names stay as a fallback for anyone
+     with the fonts installed locally. */
+  --font-heading: 'Fredoka Variable', 'Fredoka', 'Nunito Variable', 'Nunito', sans-serif;
+  --font-body: 'Nunito Variable', 'Nunito', 'Segoe UI', sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', 'Fira Code', 'Source Code Pro', Menlo, Consolas,
+    monospace;
 
   --section-gap: 4rem;
 }

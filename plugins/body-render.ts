@@ -1,4 +1,5 @@
 import { BLOG_DESCRIPTION, BLOG_TITLE } from '../src/config/site'
+import type { HomeSection } from '../src/content/home'
 import { featureText, type PricingPlan } from '../src/content/pricing'
 import { escapeHtml, publishedPosts, type BlogPost } from './blog-render'
 
@@ -123,7 +124,39 @@ export function renderSiteNav(links: readonly NavLink[]): string {
   ].join('\n')
 }
 
-export function renderHomeBody(hero: HeroCopy): string {
+/**
+ * One home section: an h2, its intro, then an h3 and a paragraph per item.
+ *
+ * An item's link rides inside its paragraph, after the text, which is also
+ * where HomePage.vue puts it — a crawler and a reader get the same sentence
+ * with the same link at the end of it.
+ */
+function homeSection(section: HomeSection): string {
+  const items = section.items.flatMap((item) => [
+    `<h3>${escapeHtml(item.title)}</h3>`,
+    item.link === undefined
+      ? `<p>${escapeHtml(item.text)}</p>`
+      : `<p>${escapeHtml(item.text)} ${anchor(item.link.href, item.link.label)}</p>`,
+  ])
+
+  return [
+    `<section id="${escapeHtml(section.id)}">`,
+    `<h2>${escapeHtml(section.heading)}</h2>`,
+    section.intro === undefined ? '' : `<p>${escapeHtml(section.intro)}</p>`,
+    ...items,
+    '</section>',
+  ]
+    .filter((line) => line !== '')
+    .join('\n')
+}
+
+/**
+ * The home page: the hero, then the sections that follow the playground.
+ *
+ * The playground itself is not baked — it is the app — so with no sections the
+ * body is the hero alone, which is what the page was before it had any.
+ */
+export function renderHomeBody(hero: HeroCopy, sections: readonly HomeSection[] = []): string {
   const cta = hero.cta
 
   return wrap([
@@ -131,6 +164,7 @@ export function renderHomeBody(hero: HeroCopy): string {
     `<p>${escapeHtml(hero.subtitle)}</p>`,
     cta === undefined ? '' : `<p>${anchor(cta.href, cta.label)}</p>`,
     cta?.note === undefined ? '' : `<p>${escapeHtml(cta.note)}</p>`,
+    ...sections.map(homeSection),
   ])
 }
 

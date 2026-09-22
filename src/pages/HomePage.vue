@@ -5,11 +5,19 @@ import logoSrc from '@/assets/koleslaw-logo-woof-bubble.svg'
 import EnhancePanel from '@/components/EnhancePanel.vue'
 import { usePageSeo } from '@/composables/useSeo'
 import { CHROME_STORE_URL } from '@/config/site'
-import { HOME_HERO } from '@/content/home'
+import { HOME_HERO, HOME_SECTIONS } from '@/content/home'
 
 usePageSeo('home')
 
 const isSubmitting = ref(false)
+
+/** Site paths route in-app; anything else opens in a new tab. */
+function isInternal(href: string): boolean {
+  return href.startsWith('/')
+}
+
+/** The hero and the playground come first; the content sections follow. */
+const FIRST_CONTENT_SECTION = 2
 
 /* ── Section reveal animation ── */
 const sections = ref<HTMLElement[]>([])
@@ -273,6 +281,38 @@ function setSectionRef(idx: number) {
     >
       <EnhancePanel @update:submitting="isSubmitting = $event" />
     </section>
+
+    <!-- Content sections: the same copy the build bakes for crawlers -->
+    <section
+      v-for="(section, index) in HOME_SECTIONS"
+      :id="section.id"
+      :key="section.id"
+      :ref="setSectionRef(FIRST_CONTENT_SECTION + index)"
+      class="content"
+      :class="{
+        'animate-in': revealed.has(FIRST_CONTENT_SECTION + index),
+        'content--hidden': isSubmitting,
+      }"
+    >
+      <h2 class="content__heading">{{ section.heading }}</h2>
+      <p v-if="section.intro" class="content__intro">{{ section.intro }}</p>
+      <div class="content__items">
+        <div v-for="item in section.items" :key="item.title" class="content__item">
+          <h3 class="content__item-title">{{ item.title }}</h3>
+          <p class="content__item-text">
+            {{ item.text }}
+            <template v-if="item.link">
+              <RouterLink v-if="isInternal(item.link.href)" :to="item.link.href" class="content__link">
+                {{ item.link.label }}
+              </RouterLink>
+              <a v-else :href="item.link.href" target="_blank" rel="noopener" class="content__link">
+                {{ item.link.label }}
+              </a>
+            </template>
+          </p>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -526,6 +566,69 @@ function setSectionRef(idx: number) {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+/* ─── Content sections ─── */
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2.5rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Out of the way while the playground has the page, like the hero. */
+.content--hidden {
+  display: none;
+}
+
+.content__heading {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--wl-black);
+  margin-bottom: 0.75rem;
+}
+
+.content__intro {
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--color-text);
+  max-width: 640px;
+  margin-bottom: 1.75rem;
+}
+
+.content__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem 2.5rem;
+}
+
+.content__item-title {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--wl-navy);
+  margin-bottom: 0.375rem;
+}
+
+.content__item-text {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--color-text);
+}
+
+.content__link {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--wl-gold);
+  text-underline-offset: 0.15em;
+}
+
+.content__link:hover {
+  color: var(--color-primary-hover);
+  text-decoration-color: currentColor;
 }
 
 /* ─── Responsive ─── */

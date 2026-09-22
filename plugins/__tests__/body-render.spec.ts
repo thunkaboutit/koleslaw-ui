@@ -13,6 +13,7 @@ import {
   type NavLink,
 } from '../body-render'
 import type { BlogPost } from '../blog-render'
+import type { HomeSection } from '../../src/content/home'
 import type { PricingPlan } from '../../src/content/pricing'
 
 /** Stand-in for dist/index.html: one empty mount point, hashed assets. */
@@ -64,6 +65,28 @@ function hero(overrides: Partial<HeroCopy> = {}): HeroCopy {
   }
 }
 
+/** Two sections: one with an intro and a linked item, one bare. */
+const SECTIONS: readonly HomeSection[] = [
+  {
+    id: 'how',
+    heading: 'How it works',
+    intro: 'Paste a draft & get back a prompt.',
+    items: [
+      { title: 'Expand', text: 'A short prompt gets the specifics.' },
+      {
+        title: 'Chrome extension',
+        text: 'A floating button on ChatGPT, Claude, and Gemini.',
+        link: { href: 'https://chromewebstore.google.com/detail/koleslaw', label: 'Get it' },
+      },
+    ],
+  },
+  {
+    id: 'faq',
+    heading: 'Questions',
+    items: [{ title: 'Is it free?', text: 'The playground is.', link: { href: '/pricing', label: 'Pricing' } }],
+  },
+]
+
 /** Three plans, one of them emphasising a number and one of them priced in words. */
 const PLANS: readonly PricingPlan[] = [
   {
@@ -105,7 +128,7 @@ function texts(html: string, selector: string): string[] {
 
 /** One of every body, so the whole-output rules are asserted against all of them. */
 const BODIES: [string, string][] = [
-  ['home', renderHomeBody(hero())],
+  ['home', renderHomeBody(hero(), SECTIONS)],
   ['page', renderPageBody({ heading: 'Pricing', description: 'Pay for what you enhance.' })],
   ['pricing', pricing()],
   ['document', renderDocumentBody('Privacy Policy', '<p>We keep prompts for 30 days.</p>')],
@@ -346,6 +369,63 @@ describe('renderHomeBody', () => {
     const html = renderHomeBody(hero({ cta: undefined }))
 
     expect(parse(html).querySelector('a')).toBeNull()
+  })
+
+  it('is the hero alone when there are no sections', () => {
+    const doc = parse(renderHomeBody(hero()))
+
+    expect(doc.querySelectorAll('section')).toHaveLength(0)
+    expect(doc.querySelectorAll('h2')).toHaveLength(0)
+  })
+
+  it('follows the hero with one section per entry, headed and anchored by id', () => {
+    const doc = parse(renderHomeBody(hero(), SECTIONS))
+    const sections = [...doc.querySelectorAll('main > section')]
+
+    expect(sections.map((section) => section.id)).toEqual(['how', 'faq'])
+    expect(sections.map((section) => section.querySelector('h2')?.textContent)).toEqual([
+      'How it works',
+      'Questions',
+    ])
+    // The hero's h1 comes before every section.
+    expect(doc.querySelector('main')?.firstElementChild?.tagName).toBe('H1')
+  })
+
+  it('renders the intro as the first paragraph, and none where there is none', () => {
+    const doc = parse(renderHomeBody(hero(), SECTIONS))
+
+    expect(doc.querySelector('#how h2 + p')?.textContent).toBe('Paste a draft & get back a prompt.')
+    expect(doc.querySelector('#faq h2 + p')).toBeNull()
+    expect(doc.querySelector('#faq h2 + h3')?.textContent).toBe('Is it free?')
+  })
+
+  it('renders each item as an h3 and a paragraph, with the link inside the paragraph', () => {
+    const doc = parse(renderHomeBody(hero(), SECTIONS))
+
+    expect(texts(renderHomeBody(hero(), SECTIONS), '#how h3')).toEqual(['Expand', 'Chrome extension'])
+    expect(doc.querySelector('#how h3 + p')?.textContent).toBe('A short prompt gets the specifics.')
+
+    const paragraphs = [...doc.querySelectorAll('#how p')]
+    const linked = paragraphs[paragraphs.length - 1]
+    expect(linked?.textContent).toBe('A floating button on ChatGPT, Claude, and Gemini. Get it')
+    expect(linked?.querySelector('a')?.getAttribute('href')).toBe(
+      'https://chromewebstore.google.com/detail/koleslaw',
+    )
+    expect(doc.querySelector('#faq a')?.getAttribute('href')).toBe('/pricing')
+  })
+
+  it('escapes section copy like everything else', () => {
+    const html = renderHomeBody(hero(), [
+      {
+        id: 'x',
+        heading: 'Q & A <b>',
+        items: [{ title: '"Quoted"', text: '<script>alert(1)</script>' }],
+      },
+    ])
+
+    expect(html).not.toContain('<script>')
+    expect(html).toContain('Q &amp; A &lt;b&gt;')
+    expect(parse(html).querySelector('h3')?.textContent).toBe('"Quoted"')
   })
 })
 

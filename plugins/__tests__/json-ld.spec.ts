@@ -69,10 +69,14 @@ describe('organizationNode', () => {
     ])
   })
 
+  /** The mark the company's own site shows, from the company's own origin. */
+  it('shows the company mark as its logo, served from the company site', () => {
+    expect(organizationNode()['logo']).toBe('https://thunkabout.it/favicon.svg')
+  })
+
   it('claims nothing it cannot back up', () => {
     const node = organizationNode()
 
-    expect(node).not.toHaveProperty('logo')
     expect(node).not.toHaveProperty('address')
     expect(node).not.toHaveProperty('founder')
     expect(node).not.toHaveProperty('employee')
@@ -153,7 +157,11 @@ describe('blogNode', () => {
     expect(node['url']).toBe('https://koleslaw.ai/blog')
     expect(node['inLanguage']).toBe('en')
     expect(node['publisher']).toEqual({ '@id': ORGANIZATION_ID })
-    expect(node['blogPost']).toEqual([])
+  })
+
+  /** `blogPost: []` would claim the blog is empty; no key claims nothing. */
+  it('lists no posts at all rather than an empty list', () => {
+    expect(blogNode([])).not.toHaveProperty('blogPost')
   })
 
   it('lists one stub per post, newest first', () => {

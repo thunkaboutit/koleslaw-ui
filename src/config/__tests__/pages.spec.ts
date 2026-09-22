@@ -38,8 +38,20 @@ describe('STATIC_PAGES', () => {
 
   it('takes the shell and blog strings from the site constants', () => {
     expect(staticPage('home').title).toBe(SITE_TITLE)
-    expect(staticPage('blog').title).toBe(`${BLOG_TITLE} — koleslaw.ai`)
+    expect(staticPage('blog').title).toBe(BLOG_TITLE)
     expect(staticPage('blog').description).toBe(BLOG_DESCRIPTION)
+  })
+
+  /**
+   * The brand appears in every title exactly once — as the "— Koleslaw" suffix,
+   * or inside a name like "The Koleslaw Blog" that already carries it — and
+   * never as the host name: the brand is the product, not the domain.
+   */
+  it('names the brand in every title, exactly once, and never as the domain', () => {
+    for (const page of STATIC_PAGES) {
+      expect(page.title.split('Koleslaw')).toHaveLength(2)
+      expect(page.title.includes('koleslaw.ai')).toBe(false)
+    }
   })
 
   it('names the heading each page shows, which is also its label in the baked site nav', () => {

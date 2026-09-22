@@ -9,7 +9,7 @@ import {
   type SiteSources,
   type SourcePost,
 } from '../static-pages'
-import { HOME_HERO } from '../../src/content/home'
+import { HOME_HERO, HOME_SECTIONS } from '../../src/content/home'
 import {
   PRICING_NOTE,
   PRICING_PLANS,
@@ -182,6 +182,46 @@ describe('sitePages', () => {
     )
   })
 
+  /**
+   * The audit's finding was "nothing to rank on": one h1 and 45 words. The
+   * sections are the fix, and they are only a fix if the crawler gets them —
+   * HomePage.spec.ts holds the app to the same data from the other side.
+   */
+  it('bakes every content section the app shows, with its items and links', () => {
+    const document = parse(page('home.html').body)
+    const sections = [...document.querySelectorAll('main > section')]
+
+    expect(HOME_SECTIONS.length).toBeGreaterThanOrEqual(4)
+    expect(sections.map((section) => section.id)).toEqual(HOME_SECTIONS.map((entry) => entry.id))
+    expect(sections.map((section) => section.querySelector('h2')?.textContent)).toEqual(
+      HOME_SECTIONS.map((entry) => entry.heading),
+    )
+
+    for (const entry of HOME_SECTIONS) {
+      const section = document.getElementById(entry.id)
+      const links = [...(section?.querySelectorAll('a') ?? [])].map((link) => [
+        link.getAttribute('href'),
+        link.textContent,
+      ])
+
+      expect([...(section?.querySelectorAll('h3') ?? [])].map((h3) => h3.textContent)).toEqual(
+        entry.items.map((item) => item.title),
+      )
+      expect(entry.items.filter((item) => !section?.textContent?.includes(item.text))).toEqual([])
+      expect(links).toEqual(
+        entry.items.flatMap((item) =>
+          item.link === undefined ? [] : [[item.link.href, item.link.label]],
+        ),
+      )
+    }
+  })
+
+  it('gives the home page enough words to rank on', () => {
+    const text = parse(page('home.html').body).body.textContent ?? ''
+
+    expect(text.split(/\s+/).filter((word) => word !== '').length).toBeGreaterThan(400)
+  })
+
   it('describes the product on the home page in the words of its meta description', () => {
     const home = page('home.html')
     const app = home.jsonLd.find((node) => node['@type'] === 'SoftwareApplication')
@@ -266,10 +306,13 @@ describe('sitePages', () => {
 
   it('describes exactly one article on a post page', () => {
     // The Blog node lists a stub per post. On a post page those stubs would sit
-    // beside the real BlogPosting as extra, thinner articles about other URLs.
-    const graph = JSON.stringify(page('blog/quantization.html').jsonLd)
+    // beside the real BlogPosting as extra, thinner articles about other URLs —
+    // and an empty list in their place would claim the blog has no posts.
+    const baked = page('blog/quantization.html')
+    const blog = baked.jsonLd.find((node) => node['@type'] === 'Blog')
 
-    expect(graph.split('"@type":"BlogPosting"')).toHaveLength(2)
+    expect(JSON.stringify(baked.jsonLd).split('"@type":"BlogPosting"')).toHaveLength(2)
+    expect(blog).not.toHaveProperty('blogPost')
   })
 
   it('walks the breadcrumb from the home page down to the page itself', () => {
