@@ -39,7 +39,9 @@ export const STATIC_PAGES: readonly StaticPage[] = [
   {
     name: 'blog',
     path: '/blog',
-    title: `${BLOG_TITLE} — koleslaw.ai`,
+    // The blog's own name already carries the brand, so it takes no
+    // "— Koleslaw" suffix: "The Koleslaw Blog — Koleslaw" says it twice.
+    title: BLOG_TITLE,
     description: BLOG_DESCRIPTION,
     heading: BLOG_TITLE,
   },

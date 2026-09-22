@@ -234,7 +234,7 @@ echo "==> the blog index has its own metadata"
 fetch '/blog'
 expect_status 200
 expect_no_redirect
-expect_contains '<title>The Koleslaw Blog — koleslaw.ai</title>'
+expect_contains '<title>The Koleslaw Blog</title>'
 expect_contains '<link rel="canonical" href="https://koleslaw.ai/blog">'
 expect_contains '"@type":"Blog"'
 expect_contains "<a href=\"/blog/${SLUG}\">${TITLE}</a>"
