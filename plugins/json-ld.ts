@@ -33,9 +33,15 @@ export const BLOG_ID = `${SITE_URL}/blog#blog`
  * The publishing company. These facts live here because nothing else in the UI
  * needs them: the site is Koleslaw, the legal entity behind it is Thunk About
  * It, and the name always carries the "It".
+ *
+ * The logo is the company's own mark, served from the company's own site — the
+ * thought-bubble "T" that thunkabout.it uses as its wordmark and favicon. Not
+ * the Koleslaw mascot: that is the product's face, and this node is the
+ * publisher's.
  */
 const ORGANIZATION_NAME = 'Thunk About It'
 const ORGANIZATION_URL = 'https://thunkabout.it'
+const ORGANIZATION_LOGO = `${ORGANIZATION_URL}/favicon.svg`
 const ORGANIZATION_SAME_AS = [
   'https://github.com/thunkaboutit',
   'https://huggingface.co/thunkaboutit',
@@ -68,6 +74,7 @@ export function organizationNode(): JsonLdNode {
     '@id': ORGANIZATION_ID,
     name: ORGANIZATION_NAME,
     url: ORGANIZATION_URL,
+    logo: ORGANIZATION_LOGO,
     sameAs: ORGANIZATION_SAME_AS,
   }
 }
@@ -112,8 +119,19 @@ export function softwareApplicationNode(description: string): JsonLdNode {
  * Filters through publishedPosts rather than trusting the caller, for the same
  * reason the feed and the sitemap do: a draft must not be able to leak into a
  * crawlable artefact because someone forgot to filter.
+ *
+ * With nothing to list — a post page declares the blog it belongs to, not its
+ * siblings — the key is left off rather than set to `[]`: an empty list says
+ * "this blog has no posts", which is false on exactly the pages that use it.
  */
 export function blogNode(posts: BlogPost[]): JsonLdNode {
+  const stubs = publishedPosts(posts).map((post) => ({
+    '@type': 'BlogPosting',
+    headline: post.title,
+    url: postUrl(post.slug),
+    datePublished: post.date,
+  }))
+
   return {
     '@type': 'Blog',
     '@id': BLOG_ID,
@@ -122,12 +140,7 @@ export function blogNode(posts: BlogPost[]): JsonLdNode {
     url: `${SITE_URL}/blog`,
     inLanguage: LANGUAGE,
     publisher: ref(ORGANIZATION_ID),
-    blogPost: publishedPosts(posts).map((post) => ({
-      '@type': 'BlogPosting',
-      headline: post.title,
-      url: postUrl(post.slug),
-      datePublished: post.date,
-    })),
+    ...(stubs.length === 0 ? {} : { blogPost: stubs }),
   }
 }
 

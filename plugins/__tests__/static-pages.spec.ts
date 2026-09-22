@@ -266,10 +266,13 @@ describe('sitePages', () => {
 
   it('describes exactly one article on a post page', () => {
     // The Blog node lists a stub per post. On a post page those stubs would sit
-    // beside the real BlogPosting as extra, thinner articles about other URLs.
-    const graph = JSON.stringify(page('blog/quantization.html').jsonLd)
+    // beside the real BlogPosting as extra, thinner articles about other URLs —
+    // and an empty list in their place would claim the blog has no posts.
+    const baked = page('blog/quantization.html')
+    const blog = baked.jsonLd.find((node) => node['@type'] === 'Blog')
 
-    expect(graph.split('"@type":"BlogPosting"')).toHaveLength(2)
+    expect(JSON.stringify(baked.jsonLd).split('"@type":"BlogPosting"')).toHaveLength(2)
+    expect(blog).not.toHaveProperty('blogPost')
   })
 
   it('walks the breadcrumb from the home page down to the page itself', () => {
