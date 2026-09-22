@@ -1,6 +1,6 @@
 import { STATIC_PAGES, pageUrl, staticPage, type StaticPage } from '../src/config/pages'
 import { BLOG_TITLE, CHROME_STORE_URL, postUrl } from '../src/config/site'
-import { HOME_HERO } from '../src/content/home'
+import { HOME_HERO, HOME_SECTIONS } from '../src/content/home'
 import { PRICING_NOTE, PRICING_PLANS, PRICING_TAGLINE } from '../src/content/pricing'
 import { buildPage, publishedPosts, type BlogPost, type PageMeta } from './blog-render'
 import {
@@ -95,10 +95,13 @@ function withNav(body: string): string {
 function staticBody(page: StaticPage, sources: SiteSources): string {
   switch (page.name) {
     case 'home':
-      return renderHomeBody({
-        ...HOME_HERO,
-        cta: { ...HOME_HERO.cta, href: CHROME_STORE_URL },
-      })
+      return renderHomeBody(
+        {
+          ...HOME_HERO,
+          cta: { ...HOME_HERO.cta, href: CHROME_STORE_URL },
+        },
+        HOME_SECTIONS,
+      )
     case 'blog':
       return renderBlogIndexBody(sources.posts)
     case 'pricing':

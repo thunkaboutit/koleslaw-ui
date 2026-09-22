@@ -9,7 +9,7 @@ import {
   type SiteSources,
   type SourcePost,
 } from '../static-pages'
-import { HOME_HERO } from '../../src/content/home'
+import { HOME_HERO, HOME_SECTIONS } from '../../src/content/home'
 import {
   PRICING_NOTE,
   PRICING_PLANS,
@@ -180,6 +180,46 @@ describe('sitePages', () => {
     expect(document.querySelector(`main a[href="${CHROME_STORE_URL}"]`)?.textContent).toBe(
       HOME_HERO.cta.label,
     )
+  })
+
+  /**
+   * The audit's finding was "nothing to rank on": one h1 and 45 words. The
+   * sections are the fix, and they are only a fix if the crawler gets them —
+   * HomePage.spec.ts holds the app to the same data from the other side.
+   */
+  it('bakes every content section the app shows, with its items and links', () => {
+    const document = parse(page('home.html').body)
+    const sections = [...document.querySelectorAll('main > section')]
+
+    expect(HOME_SECTIONS.length).toBeGreaterThanOrEqual(4)
+    expect(sections.map((section) => section.id)).toEqual(HOME_SECTIONS.map((entry) => entry.id))
+    expect(sections.map((section) => section.querySelector('h2')?.textContent)).toEqual(
+      HOME_SECTIONS.map((entry) => entry.heading),
+    )
+
+    for (const entry of HOME_SECTIONS) {
+      const section = document.getElementById(entry.id)
+      const links = [...(section?.querySelectorAll('a') ?? [])].map((link) => [
+        link.getAttribute('href'),
+        link.textContent,
+      ])
+
+      expect([...(section?.querySelectorAll('h3') ?? [])].map((h3) => h3.textContent)).toEqual(
+        entry.items.map((item) => item.title),
+      )
+      expect(entry.items.filter((item) => !section?.textContent?.includes(item.text))).toEqual([])
+      expect(links).toEqual(
+        entry.items.flatMap((item) =>
+          item.link === undefined ? [] : [[item.link.href, item.link.label]],
+        ),
+      )
+    }
+  })
+
+  it('gives the home page enough words to rank on', () => {
+    const text = parse(page('home.html').body).body.textContent ?? ''
+
+    expect(text.split(/\s+/).filter((word) => word !== '').length).toBeGreaterThan(400)
   })
 
   it('describes the product on the home page in the words of its meta description', () => {
