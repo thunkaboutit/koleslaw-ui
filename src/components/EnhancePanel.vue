@@ -173,11 +173,12 @@ watch(
   },
 )
 
-/* Auto-expand thinking block when thinking starts */
+/* Auto-expand thinking block when thinking starts, but not when it resumes
+   after the answer began: the reader is looking at the answer by then */
 watch(
   () => chat.isThinking,
   (thinking) => {
-    if (thinking) {
+    if (thinking && !chat.streamingContent) {
       thinkingExpanded.value = true
       thinkingUserScrolled.value = false
     }

@@ -56,7 +56,9 @@ export const useChatStore = defineStore('chat', () => {
 
     const onChunk = (event: ChatEvent) => {
       if (event.type === 'thinking') {
-        streamingThinking.value += event.delta
+        // Thinking that resumes after answer text starts a new paragraph
+        const resumed = !isThinking.value && streamingThinking.value && streamingContent.value
+        streamingThinking.value += (resumed ? '\n\n' : '') + event.delta
         if (!isThinking.value) isThinking.value = true
       } else {
         if (isThinking.value) isThinking.value = false
