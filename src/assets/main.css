@@ -1,5 +1,6 @@
 @import './base.css';
 @import './prose.css';
+@import './markdown-body.css';
 
 #app {
   position: relative;

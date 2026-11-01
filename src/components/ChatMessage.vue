@@ -1,14 +1,28 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue'
+import { useMarkdown } from '@/composables/useMarkdown'
+
+/* `markdown` renders the content as markdown (the playground); without it
+   the content shows as plain text. */
+const props = defineProps<{
   role: 'user' | 'assistant'
   content: string
+  markdown?: boolean
 }>()
+
+const { renderMarkdown } = useMarkdown()
+const rendered = computed(() => (props.markdown ? renderMarkdown(props.content) : ''))
 </script>
 
 <template>
   <div class="chat-msg" :class="[`chat-msg--${role}`]" :aria-label="`${role} message`">
     <div class="chat-msg__label">{{ role === 'user' ? 'You' : 'Koleslaw' }}</div>
-    <div class="chat-msg__body">{{ content }}</div>
+    <div
+      v-if="markdown"
+      class="chat-msg__body chat-msg__body--markdown markdown-body"
+      v-html="rendered"
+    />
+    <div v-else class="chat-msg__body">{{ content }}</div>
   </div>
 </template>
 
@@ -44,6 +58,18 @@ defineProps<{
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.chat-msg__body--markdown {
+  white-space: normal;
+}
+
+.chat-msg__body--markdown :deep(> :first-child) {
+  margin-top: 0;
+}
+
+.chat-msg__body--markdown :deep(> :last-child) {
+  margin-bottom: 0;
 }
 
 .chat-msg--user .chat-msg__body {

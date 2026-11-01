@@ -2,32 +2,16 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { ChatMessage } from '@/api/types'
 import { sendChatStream, sendChatStreamWithFiles } from '@/api/chat'
+import type { ChatEvent } from '@/api/sse'
 import { useAuthStore } from '@/stores/auth'
 import { useKeysStore } from '@/stores/keys'
 
-const STORAGE_KEY = 'koleslaw-chat-history'
-const MAX_MESSAGES = 100
-
-function loadMessages(): ChatMessage[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as ChatMessage[]
-  } catch {
-    // corrupted storage — start fresh
-  }
-  return []
-}
-
-function saveMessages(messages: ChatMessage[]) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_MESSAGES)))
-  } catch {
-    // storage full — silently fail
-  }
-}
+/* Memory only.  The history used to persist in localStorage and was resent
+   in full on the first send after a reload; the session store removes the
+   old key. */
 
 export const useChatStore = defineStore('chat', () => {
-  const messages = ref<ChatMessage[]>(loadMessages())
+  const messages = ref<ChatMessage[]>([])
   const sending = ref(false)
   const error = ref<string | null>(null)
   const streamingContent = ref('')
@@ -44,7 +28,6 @@ export const useChatStore = defineStore('chat', () => {
     error.value = null
     const userMessage: ChatMessage = { role: 'user', content: content.trim() }
     messages.value.push(userMessage)
-    saveMessages(messages.value)
 
     sending.value = true
     streamingContent.value = ''
@@ -53,13 +36,15 @@ export const useChatStore = defineStore('chat', () => {
     isThinking.value = false
     abortController = new AbortController()
 
-    const onChunk = (chunk: { delta: string; type?: 'text' | 'thinking' }) => {
-      if (chunk.type === 'thinking') {
-        streamingThinking.value += chunk.delta
+    const onChunk = (event: ChatEvent) => {
+      if (event.type === 'thinking') {
+        // Thinking that resumes after answer text starts a new paragraph
+        const resumed = !isThinking.value && streamingThinking.value && streamingContent.value
+        streamingThinking.value += (resumed ? '\n\n' : '') + event.delta
         if (!isThinking.value) isThinking.value = true
       } else {
         if (isThinking.value) isThinking.value = false
-        streamingContent.value += chunk.delta
+        streamingContent.value += event.delta
       }
     }
 
@@ -87,7 +72,6 @@ export const useChatStore = defineStore('chat', () => {
           content: streamingContent.value,
         }
         messages.value.push(assistantMessage)
-        saveMessages(messages.value)
       }
     } catch (e) {
       if ((e as Error).name !== 'AbortError') {
@@ -115,7 +99,6 @@ export const useChatStore = defineStore('chat', () => {
     isThinking.value = false
     lastThinkingContent.value = ''
     cancelStream()
-    localStorage.removeItem(STORAGE_KEY)
   }
 
   return {
