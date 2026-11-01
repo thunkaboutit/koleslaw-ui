@@ -1,10 +1,13 @@
 const API_BASE = ''
 const PUBLIC_API_KEY = 'pk_live_fNuYW07Bf16zLFLbghxSPERYV4QS1SWF4-OuLJ5JcCE'
 
+/* `code` is the API's machine-readable error code (ErrorResponse.code), when
+   the body carries one. */
 export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    public code: string | null = null,
   ) {
     super(message)
     this.name = 'ApiError'

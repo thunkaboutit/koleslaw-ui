@@ -1,8 +1,12 @@
-/* Model sessions: start, turn, delete.  Signatures only; implemented in the
-   next commit. */
+/* Model sessions: start, turn, delete.  Auth is the same as /v1/chat (the
+   public bearer, plus X-Api-Key-Id for a signed-in user's selected key).  The
+   session id rides in the X-Session-Id header, never the path. */
 
-import type { SessionEvent } from './sse'
+import { authHeaders, postEventStream } from './chat'
+import { decodeSessionEvent, type SessionEvent } from './sse'
 import type { StartSessionRequest, TurnRequest } from './types'
+
+export const SESSION_ID_HEADER = 'X-Session-Id'
 
 export interface SessionCallOptions {
   signal?: AbortSignal
@@ -10,22 +14,29 @@ export interface SessionCallOptions {
 }
 
 export async function startSession(
-  _body: StartSessionRequest,
-  _onEvent: (event: SessionEvent) => void,
-  _options: SessionCallOptions = {},
+  body: StartSessionRequest,
+  onEvent: (event: SessionEvent) => void,
+  options: SessionCallOptions = {},
 ): Promise<void> {
-  throw new Error('Not implemented')
+  await postEventStream('/v1/sessions', body, decodeSessionEvent, onEvent, options)
 }
 
 export async function sendTurn(
-  _sessionId: string,
-  _body: TurnRequest,
-  _onEvent: (event: SessionEvent) => void,
-  _options: SessionCallOptions = {},
+  sessionId: string,
+  body: TurnRequest,
+  onEvent: (event: SessionEvent) => void,
+  options: SessionCallOptions = {},
 ): Promise<void> {
-  throw new Error('Not implemented')
+  await postEventStream('/v1/sessions/turns', body, decodeSessionEvent, onEvent, {
+    ...options,
+    headers: { [SESSION_ID_HEADER]: sessionId },
+  })
 }
 
-export async function deleteSession(_sessionId: string, _apiKeyId?: string | null): Promise<void> {
-  throw new Error('Not implemented')
+/* Always 204 on the server.  Rejects only on a network failure. */
+export async function deleteSession(sessionId: string, apiKeyId?: string | null): Promise<void> {
+  await fetch('/v1/sessions', {
+    method: 'DELETE',
+    headers: { ...authHeaders(apiKeyId), [SESSION_ID_HEADER]: sessionId },
+  })
 }
