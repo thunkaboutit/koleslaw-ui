@@ -72,4 +72,35 @@ describe('EnhancePanel stream rendering', () => {
     expect(wrapper.find('.response-text').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('undefined')
   })
+
+  it('case E: thinking that resumes after text stays in its collapsed block', async () => {
+    const stream = stubStream()
+    const wrapper = mountPanel()
+    await submit(wrapper, 'make an app')
+    const body = () => wrapper.find('.thinking-block__body')
+
+    stream.push({ delta: 'plan', type: 'thinking', finish_reason: null })
+    await settle()
+    expect(body().exists()).toBe(true)
+
+    stream.push({ delta: 'Q: which DB?', type: 'text', finish_reason: null })
+    await settle()
+    expect(body().exists()).toBe(false)
+
+    stream.push({ delta: 'assume postgres', type: 'thinking', finish_reason: null })
+    await settle()
+    expect(wrapper.findAll('.thinking-block')).toHaveLength(1)
+    expect(body().exists()).toBe(false)
+
+    stream.push({ delta: ' Enhanced: build X', type: 'text', finish_reason: null })
+    stream.push({ delta: '', type: 'text', finish_reason: 'stop' })
+    stream.close()
+    await settle()
+
+    const answer = wrapper.find('.response-text').text()
+    expect(answer).toBe('Q: which DB? Enhanced: build X')
+    await wrapper.find('.thinking-block__header').trigger('click')
+    expect(body().text()).toContain('plan')
+    expect(body().text()).toContain('assume postgres')
+  })
 })
