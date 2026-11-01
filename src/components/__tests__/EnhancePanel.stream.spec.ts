@@ -3,10 +3,11 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import EnhancePanel from '../EnhancePanel.vue'
 import { controlledSSE } from '@/api/__tests__/sseStream'
+import { ev } from '@/stores/__tests__/sessionServer'
 
 /* Stream shapes found while investigating the CoT mangling (model sessions
-   PRD, root cause cases).  Each case mounts the real panel and store over a
-   stubbed SSE fetch. */
+   PRD, root cause cases).  Each case mounts the real panel and session store
+   over a stubbed session stream. */
 
 function mountPanel(): VueWrapper {
   return mount(EnhancePanel, {
@@ -50,9 +51,10 @@ describe('EnhancePanel stream rendering', () => {
     const wrapper = mountPanel()
     await submit(wrapper, 'make an app')
 
+    stream.push(ev.session())
     stream.push({ type: 'question', questions: [{ id: 'q1', text: 'Which stack?' }] })
-    stream.push({ delta: 'Final prompt', type: 'text', finish_reason: null })
-    stream.push({ delta: '', type: 'text', finish_reason: 'stop' })
+    stream.push(ev.text('Final prompt'))
+    stream.push(ev.turn('prompt', 1, 2))
     stream.close()
     await settle()
 
@@ -65,11 +67,13 @@ describe('EnhancePanel stream rendering', () => {
     const wrapper = mountPanel()
     await submit(wrapper, 'make an app')
 
+    stream.push(ev.session())
     stream.push({ type: 'question', questions: [{ id: 'q1', text: 'Which stack?' }] })
     stream.close()
     await settle()
 
     expect(wrapper.find('.response-text').exists()).toBe(false)
+    expect(wrapper.find('.enhance__error').text()).toContain('cut off')
     expect(wrapper.text()).not.toContain('undefined')
   })
 
@@ -79,21 +83,22 @@ describe('EnhancePanel stream rendering', () => {
     await submit(wrapper, 'make an app')
     const body = () => wrapper.find('.thinking-block__body')
 
-    stream.push({ delta: 'plan', type: 'thinking', finish_reason: null })
+    stream.push(ev.session())
+    stream.push(ev.thinking('plan'))
     await settle()
     expect(body().exists()).toBe(true)
 
-    stream.push({ delta: 'Q: which DB?', type: 'text', finish_reason: null })
+    stream.push(ev.text('Q: which DB?'))
     await settle()
     expect(body().exists()).toBe(false)
 
-    stream.push({ delta: 'assume postgres', type: 'thinking', finish_reason: null })
+    stream.push(ev.thinking('assume postgres'))
     await settle()
     expect(wrapper.findAll('.thinking-block')).toHaveLength(1)
     expect(body().exists()).toBe(false)
 
-    stream.push({ delta: ' Enhanced: build X', type: 'text', finish_reason: null })
-    stream.push({ delta: '', type: 'text', finish_reason: 'stop' })
+    stream.push(ev.text(' Enhanced: build X'))
+    stream.push(ev.turn('prompt', 1, 2))
     stream.close()
     await settle()
 
