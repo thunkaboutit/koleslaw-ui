@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, inject, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useChatStore } from '@/stores/chat'
+import { useSessionStore } from '@/stores/session'
 import { useRouter, useRoute } from 'vue-router'
 
 const auth = useAuthStore()
-const chat = useChatStore()
+const session = useSessionStore()
 const router = useRouter()
 const route = useRoute()
 const forceRemount = inject<() => void>('forceRemount')
@@ -54,7 +54,7 @@ async function signOut() {
             <RouterLink
               to="/chat"
               class="navbar__link"
-              @click="handleNav('/chat', () => chat.clearChat())"
+              @click="handleNav('/chat', () => session.newChat())"
               >New Chat</RouterLink
             >
             <RouterLink to="/dashboard" class="navbar__link" @click="handleNav('/dashboard')"
@@ -103,7 +103,7 @@ async function signOut() {
         <RouterLink
           to="/chat"
           class="navbar__mobile-link"
-          @click="handleNav('/chat', () => chat.clearChat())"
+          @click="handleNav('/chat', () => session.newChat())"
           >New Chat</RouterLink
         >
         <RouterLink to="/dashboard" class="navbar__mobile-link" @click="handleNav('/dashboard')"

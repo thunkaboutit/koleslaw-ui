@@ -2,7 +2,7 @@
  * Long-form markdown typography.
  *
  * Used by the blog and the policy pages. The playground keeps its own tighter
- * `.markdown-body` rules in EnhancePanel.vue — chat bubbles and 2000-word
+ * `.markdown-body` rules in markdown-body.css.  Chat bubbles and 2000-word
  * articles want different measure, so they stay separate on purpose.
  */
 

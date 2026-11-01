@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onUnmounted, onBeforeUnmount } from 'vue'
-import { useChatStore } from '@/stores/chat'
+import { useSessionStore } from '@/stores/session'
 import { useMarkdown } from '@/composables/useMarkdown'
-import PlatformActionBar from '@/components/PlatformActionBar.vue'
+import ChatMessage from '@/components/ChatMessage.vue'
+import EnhancedPromptCard from '@/components/EnhancedPromptCard.vue'
 import PlaygroundKeyPicker from '@/components/PlaygroundKeyPicker.vue'
+import ThinkingBlock from '@/components/ThinkingBlock.vue'
+
+/* The playground: the session transcript and the composer.  The
+   conversation itself lives in the session store. */
 
 const emit = defineEmits<{
   'update:submitting': [value: boolean]
 }>()
 
-const chat = useChatStore()
+const session = useSessionStore()
 const { renderMarkdown } = useMarkdown()
 
 /* ── Placeholder rotation ── */
@@ -36,15 +41,11 @@ const PLACEHOLDERS = [
   'Toss your spaghetti prompt in here. Woof sorts the noodles.',
 ]
 const placeholder = PLACEHOLDERS[Math.floor(Math.random() * PLACEHOLDERS.length)]
+const REPLY_PLACEHOLDER = 'Answer Woof, or ask for changes.'
 
 /* ── Local UI state ── */
-const userInput = ref('')
-const copied = ref(false)
 const showPreview = ref(false)
-const thinkingExpanded = ref(false)
-const thinkingBodyRef = ref<HTMLElement | null>(null)
-const thinkingUserScrolled = ref(false)
-const responseRef = ref<HTMLElement | null>(null)
+const endRef = ref<HTMLElement | null>(null)
 const enhanceTextarea = ref<HTMLTextAreaElement | null>(null)
 
 /* ── File attachments ── */
@@ -83,7 +84,7 @@ function handleFileSelect(event: Event) {
     if (attachedFiles.value.length >= 5) break
     const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
     if (BLOCKED_EXTENSIONS.has(ext)) {
-      chat.error = `Compressed/archive files (${ext}) are not supported.`
+      session.error = `Compressed/archive files (${ext}) are not supported.`
       continue
     }
     attachedFiles.value.push(file)
@@ -119,40 +120,29 @@ function formatFileSize(bytes: number): string {
 
 onBeforeUnmount(() => clearFiles())
 
-/* ── Submission & animation state ── */
-const isSubmitting = ref(false)
-const responseText = ref('')
-
-/* Strip boilerplate the model sometimes wraps around its output */
-function cleanResponse(raw: string): string {
-  return raw
-    .replace(/^---\n?/gm, '')
-    .replace(
-      /^\s*(?:[#*_`]*\s*)*(?:here(?:'s| is)(?: your| the)?\s+)?enhanced\s+prompt\s*(?:[#*_`]*\s*)*:?\s*\n*/i,
-      '',
+/* ── Transcript ── */
+const hasTurns = computed(() => session.turns.length > 0)
+const renderedPreview = computed(() => renderMarkdown(session.draft))
+const composerPlaceholder = computed(() =>
+  session.status === 'awaiting_reply' ? REPLY_PLACEHOLDER : placeholder,
+)
+const sendLabel = computed(() => (session.status === 'awaiting_reply' ? 'Send reply' : 'Enhance'))
+const showWaitingSpinner = computed(() => {
+  const turn = session.lastAssistant
+  return session.status === 'streaming' && !!turn && !turn.text && !turn.thinking
+})
+const banner = computed(() => {
+  if (session.status === 'expired') return 'This chat expired. Start a new chat to keep going.'
+  if (session.status === 'done') {
+    return (
+      session.notice ?? 'That was the last turn for this chat. Start a new chat for another prompt.'
     )
-    .trim()
-}
+  }
+  return null
+})
 
-const enhancedPrompt = computed(() => cleanResponse(chat.streamingContent || responseText.value))
-const hasResponse = computed(() => responseText.value.length > 0 && !chat.sending)
-const renderedResponse = computed(() => renderMarkdown(enhancedPrompt.value))
-const renderedPreview = computed(() => renderMarkdown(userInput.value))
-
-/* ── Thinking block ── */
-const showThinkingBlock = computed(
-  () => !!(chat.isThinking || chat.streamingThinking || chat.lastThinkingContent),
-)
-const showWaitingSpinner = computed(
-  () => chat.sending && !showThinkingBlock.value && !enhancedPrompt.value,
-)
-const thinkingContent = computed(() => chat.streamingThinking || chat.lastThinkingContent)
-const renderedThinking = computed(() =>
-  thinkingContent.value ? renderMarkdown(thinkingContent.value) : '',
-)
-
-/* Notify parent when submitting state changes */
-watch(isSubmitting, (val) => emit('update:submitting', val))
+/* Notify parent when the playground leaves or returns to its empty state */
+watch(hasTurns, (val) => emit('update:submitting', val), { immediate: true })
 
 function autoResize() {
   const el = enhanceTextarea.value
@@ -161,148 +151,36 @@ function autoResize() {
   el.style.height = `${el.scrollHeight}px`
 }
 
+/* The store clears the draft on send and restores it on a discarded turn */
+watch(
+  () => session.draft,
+  () => nextTick(autoResize),
+)
+
 /* Auto-scroll as streamed content arrives */
 watch(
-  () => chat.streamingContent,
+  () => session.lastAssistant?.text,
   () => {
-    if (chat.sending) {
-      nextTick(() => {
-        responseRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-      })
+    if (session.status === 'streaming') {
+      nextTick(() => endRef.value?.scrollIntoView({ behavior: 'smooth', block: 'end' }))
     }
   },
 )
-
-/* Auto-expand thinking block when thinking starts, but not when it resumes
-   after the answer began: the reader is looking at the answer by then */
-watch(
-  () => chat.isThinking,
-  (thinking) => {
-    if (thinking && !chat.streamingContent) {
-      thinkingExpanded.value = true
-      thinkingUserScrolled.value = false
-    }
-  },
-)
-
-/* Auto-scroll thinking body as streamed thinking arrives */
-watch(
-  () => chat.streamingThinking,
-  () => {
-    if (chat.isThinking && !thinkingUserScrolled.value) {
-      nextTick(() => {
-        const el = thinkingBodyRef.value
-        if (el) el.scrollTop = el.scrollHeight
-      })
-    }
-  },
-)
-
-/* Detect user scrolling up in the thinking body */
-function onThinkingScroll() {
-  const el = thinkingBodyRef.value
-  if (!el) return
-  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 20
-  thinkingUserScrolled.value = !atBottom
-}
-
-/* Auto-collapse thinking block when content starts streaming */
-watch(
-  () => chat.streamingContent,
-  (content) => {
-    if (content && !chat.isThinking) thinkingExpanded.value = false
-  },
-)
-
-/* Capture completed response, or reset on error/cancel */
-watch(
-  () => chat.sending,
-  (sending, wasSending) => {
-    if (wasSending && !sending) {
-      if (chat.error) {
-        isSubmitting.value = false
-      } else {
-        const last = chat.messages[chat.messages.length - 1]
-        if (last?.role === 'assistant') {
-          responseText.value = last.content
-        } else {
-          isSubmitting.value = false
-        }
-      }
-    }
-  },
-)
-
-const ENHANCE_PREFIX_RE =
-  /^(enhance|improve|rewrite|refine|rephrase|fix|optimize|polish|upgrade|rework)\b/i
-
-function prefixPrompt(text: string): string {
-  if (ENHANCE_PREFIX_RE.test(text)) return text
-  return `Enhance this prompt:\n\n${text}`
-}
 
 async function submitPrompt() {
-  const text = userInput.value.trim()
-  if (!text || chat.sending) return
-  // Snapshot files for this request — chips stay visible until submit completes
-  const files = attachedFiles.value.length ? [...attachedFiles.value] : undefined
-
-  responseText.value = ''
-  copied.value = false
-  chat.error = null
-  isSubmitting.value = true
-
+  if (!session.canSend || !session.draft.trim()) return
+  // Snapshot files for this request; chips stay visible until the turn ends
+  const files = attachedFiles.value.length ? [...attachedFiles.value] : []
   nextTick(() => enhanceTextarea.value?.focus())
-
-  await chat.send(prefixPrompt(text), files)
+  await session.send(files)
+  if (session.status !== 'idle') clearFiles()
 }
 
-function clearEnhancement() {
-  userInput.value = ''
-  responseText.value = ''
-  copied.value = false
-  isSubmitting.value = false
-  thinkingExpanded.value = false
-  chat.clearChat()
+function newChat() {
+  showPreview.value = false
+  session.newChat()
   clearFiles()
-  nextTick(() => {
-    autoResize()
-    enhanceTextarea.value?.focus()
-  })
-}
-
-/* Reset local state when the chat store is cleared externally (e.g. navbar "New Chat" link) */
-watch(
-  () => chat.messages.length,
-  (len) => {
-    if (len === 0 && responseText.value) {
-      userInput.value = ''
-      responseText.value = ''
-      copied.value = false
-      isSubmitting.value = false
-      thinkingExpanded.value = false
-      clearFiles()
-      nextTick(() => autoResize())
-    }
-  },
-)
-
-async function copyToClipboard() {
-  const text = enhancedPrompt.value
-  try {
-    await navigator.clipboard.writeText(text)
-    copied.value = true
-    setTimeout(() => (copied.value = false), 2000)
-  } catch {
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    document.body.appendChild(textarea)
-    textarea.select()
-    document.execCommand('copy')
-    document.body.removeChild(textarea)
-    copied.value = true
-    setTimeout(() => (copied.value = false), 2000)
-  }
+  nextTick(() => enhanceTextarea.value?.focus())
 }
 
 /* ── Voice input ── */
@@ -319,7 +197,7 @@ function toggleRecording() {
   }
 
   if (!SpeechRecognitionCtor) {
-    chat.error = 'Speech recognition is not supported in this browser.'
+    session.error = 'Speech recognition is not supported in this browser.'
     return
   }
 
@@ -333,8 +211,7 @@ function toggleRecording() {
     if (last?.isFinal) {
       const transcript = last[0]?.transcript.trim()
       if (transcript) {
-        userInput.value +=
-          (userInput.value && !userInput.value.endsWith(' ') ? ' ' : '') + transcript
+        session.draft += (session.draft && !session.draft.endsWith(' ') ? ' ' : '') + transcript
         autoResize()
       }
     }
@@ -349,10 +226,10 @@ function toggleRecording() {
     isRecording.value = false
     recognition = null
     if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-      chat.error =
+      session.error =
         'Microphone access was denied. Please allow microphone access in your browser settings.'
     } else if (event.error !== 'aborted') {
-      chat.error = `Speech recognition error: ${event.error}`
+      session.error = `Speech recognition error: ${event.error}`
     }
   }
 
@@ -380,11 +257,66 @@ onUnmounted(() => {
       @change="handleFileSelect"
     />
 
+    <!-- Transcript: one entry per user turn and per assistant turn -->
+    <div v-if="hasTurns" class="enhance__transcript" role="log">
+      <template v-for="turn in session.turns" :key="turn.id">
+        <ChatMessage v-if="turn.role === 'user'" role="user" :content="turn.content" markdown />
+        <template v-else>
+          <ThinkingBlock
+            v-if="turn.thinking || turn.thinkingActive"
+            :content="turn.thinking"
+            :active="turn.thinkingActive"
+            :answered="!!turn.text"
+          />
+          <ChatMessage
+            v-if="turn.kind === 'question'"
+            class="enhance__question"
+            role="assistant"
+            :content="turn.text"
+            markdown
+          />
+          <EnhancedPromptCard
+            v-else
+            :text="turn.text"
+            :streaming="turn.kind === null"
+            @clear="newChat"
+          />
+        </template>
+      </template>
+
+      <!-- Waiting spinner (after send, before any stream content arrives) -->
+      <div v-if="showWaitingSpinner" class="enhance__waiting" role="status" aria-live="polite">
+        <span class="enhance__waiting-spinner" aria-hidden="true" />
+        <span class="enhance__waiting-text">Woof is fetching&hellip;</span>
+      </div>
+      <div ref="endRef" />
+    </div>
+
+    <!-- Error message -->
+    <div v-if="session.error" class="enhance__error" role="alert">
+      <p>{{ session.error }}</p>
+    </div>
+
+    <!-- Notice (an empty turn) while the chat can go on -->
+    <div v-if="session.notice && !banner" class="enhance__notice" role="status">
+      <p>{{ session.notice }}</p>
+    </div>
+
+    <!-- The chat cannot go on: expired, full, or one-shot answered -->
+    <div v-if="banner" class="enhance__banner" role="status">
+      <p>{{ banner }}</p>
+      <button class="enhance__text-btn" @click="newChat">New chat</button>
+    </div>
+
     <!-- Input area -->
-    <div class="enhance__input-area" :class="{ 'enhance__input-area--expanded': isSubmitting }">
+    <div
+      v-if="session.status !== 'expired' && session.status !== 'done'"
+      class="enhance__input-area"
+      :class="{ 'enhance__input-area--expanded': hasTurns }"
+    >
       <!-- Markdown preview (read-only) -->
       <div
-        v-if="showPreview && userInput"
+        v-if="showPreview && session.draft"
         class="enhance__preview markdown-body"
         v-html="renderedPreview"
       />
@@ -392,11 +324,11 @@ onUnmounted(() => {
       <textarea
         v-show="!showPreview"
         ref="enhanceTextarea"
-        v-model="userInput"
+        v-model="session.draft"
         class="enhance__input"
-        :placeholder="placeholder"
+        :placeholder="composerPlaceholder"
         rows="2"
-        :disabled="chat.sending"
+        :disabled="!session.canSend"
         aria-label="Prompt input"
         @input="autoResize"
         @keydown.enter.exact.prevent="submitPrompt"
@@ -441,7 +373,7 @@ onUnmounted(() => {
           <button
             class="enhance__tool-btn"
             :class="{ 'enhance__tool-btn--active': attachedFiles.length > 0 }"
-            :disabled="chat.sending || attachedFiles.length >= 5"
+            :disabled="!session.canAttach || attachedFiles.length >= 5"
             aria-label="Attach file"
             @click="openFilePicker"
           >
@@ -495,7 +427,7 @@ onUnmounted(() => {
             :class="{ 'enhance__tool-btn--recording': isRecording }"
             :aria-label="isRecording ? 'Stop recording' : 'Voice input'"
             :aria-pressed="isRecording"
-            :disabled="chat.sending"
+            :disabled="!session.canSend"
             @click="toggleRecording"
           >
             <span v-if="isRecording" class="enhance__rec-dot" aria-hidden="true" />
@@ -520,10 +452,13 @@ onUnmounted(() => {
               <path d="M10 16v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
             </svg>
           </button>
+          <button v-if="session.canFinalize" class="enhance__text-btn" @click="session.finalize()">
+            Just write it
+          </button>
           <button
-            v-if="chat.sending"
+            v-if="session.status === 'streaming'"
             class="enhance__send enhance__send--cancel"
-            @click="chat.cancelStream"
+            @click="session.cancel"
             aria-label="Cancel"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -533,9 +468,9 @@ onUnmounted(() => {
           <button
             v-else
             class="enhance__send"
-            :disabled="!userInput.trim()"
+            :disabled="!session.canSend || !session.draft.trim()"
             @click="submitPrompt"
-            aria-label="Enhance"
+            :aria-label="sendLabel"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path
@@ -549,82 +484,6 @@ onUnmounted(() => {
           </button>
         </div>
       </div>
-    </div>
-
-    <!-- Waiting spinner (shown after submit, before any stream content arrives) -->
-    <div v-if="showWaitingSpinner" class="enhance__waiting" role="status" aria-live="polite">
-      <span class="enhance__waiting-spinner" aria-hidden="true" />
-      <span class="enhance__waiting-text">Woof is fetching&hellip;</span>
-    </div>
-
-    <!-- Thinking block (collapsible, streamed) -->
-    <div
-      v-if="showThinkingBlock"
-      class="thinking-block"
-      role="status"
-      aria-label="Model thinking process"
-    >
-      <button
-        class="thinking-block__header"
-        :aria-expanded="thinkingExpanded"
-        @click="thinkingExpanded = !thinkingExpanded"
-      >
-        <span v-if="chat.isThinking" class="thinking-block__spinner" aria-hidden="true" />
-        <span
-          v-else
-          class="thinking-block__chevron"
-          :class="{ 'thinking-block__chevron--open': thinkingExpanded }"
-          aria-hidden="true"
-          >&#9654;</span
-        >
-        <span class="thinking-block__text">
-          {{ chat.isThinking ? 'Thinking\u2026' : 'Thought process' }}
-        </span>
-      </button>
-      <div
-        v-if="thinkingExpanded && thinkingContent"
-        ref="thinkingBodyRef"
-        class="thinking-block__body markdown-body"
-        v-html="renderedThinking"
-        @scroll="onThinkingScroll"
-      />
-    </div>
-
-    <!-- Error message -->
-    <div v-if="chat.error" class="enhance__error" role="alert">
-      <p>{{ chat.error }}</p>
-    </div>
-
-    <!-- Streaming / completed response -->
-    <div
-      v-if="enhancedPrompt"
-      ref="responseRef"
-      class="enhance__response animate-in"
-      aria-label="Enhanced prompt result"
-      aria-live="polite"
-    >
-      <div class="enhance__response-header">
-        <h3 class="enhance__response-title">Enhanced Prompt</h3>
-        <div v-if="hasResponse" class="enhance__response-actions">
-          <button class="enhance__clear-btn" @click="clearEnhancement">Clear</button>
-          <button
-            class="enhance__copy-btn"
-            :class="{ 'enhance__copy-btn--copied': copied }"
-            @click="copyToClipboard"
-          >
-            {{ copied ? 'Copied!' : 'Copy' }}
-          </button>
-        </div>
-      </div>
-      <div class="enhance__response-body">
-        <div class="response-text markdown-body" v-html="renderedResponse" />
-        <span v-if="chat.sending" class="enhance__cursor" />
-      </div>
-      <PlatformActionBar
-        v-if="hasResponse"
-        :enhanced-prompt="enhancedPrompt"
-        @clear="clearEnhancement"
-      />
     </div>
   </div>
 </template>
@@ -862,71 +721,17 @@ onUnmounted(() => {
   color: var(--wl-warm-gray);
 }
 
-/* ─── Thinking Block ─── */
-.thinking-block {
-  background: var(--color-background-soft, var(--color-card));
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-}
-
-.thinking-block__header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.thinking-block__header:hover {
-  background: rgba(26, 39, 68, 0.04);
-}
-
-.thinking-block__chevron {
-  flex-shrink: 0;
-  font-size: 0.625rem;
-  color: var(--wl-warm-gray);
-  transition: transform 0.2s ease;
-}
-
-.thinking-block__chevron--open {
-  transform: rotate(90deg);
-}
-
-.thinking-block__spinner {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--wl-navy);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-.thinking-block__text {
-  font-family: var(--font-body);
-  font-style: italic;
-  color: var(--wl-warm-gray);
-  font-size: 0.875rem;
-}
-
-.thinking-block__body {
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--color-border);
-  max-height: 300px;
-  overflow-y: auto;
-  font-size: 0.8125rem;
-  color: var(--wl-warm-gray);
+/* ─── Transcript ─── */
+.enhance__transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 /* ─── Error ─── */
@@ -940,36 +745,27 @@ onUnmounted(() => {
   font-size: 0.875rem;
 }
 
-/* ─── Response ─── */
-.enhance__response {
+/* ─── Notice and banner ─── */
+.enhance__notice,
+.enhance__banner {
   background: var(--color-card);
+  color: var(--color-text);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
 }
 
-.enhance__response-header {
+.enhance__banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.875rem 1.25rem;
-  border-bottom: 1px solid var(--color-border);
+  gap: 1rem;
 }
 
-.enhance__response-title {
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-heading);
-}
-
-.enhance__response-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.enhance__clear-btn {
+.enhance__text-btn {
+  flex-shrink: 0;
   background: transparent;
   border: 1px solid var(--color-border-hover);
   border-radius: var(--radius);
@@ -980,146 +776,12 @@ onUnmounted(() => {
   cursor: pointer;
   transition:
     border-color 0.2s,
-    color 0.2s,
-    background 0.2s;
+    color 0.2s;
 }
 
-.enhance__clear-btn:hover {
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-}
-
-.enhance__copy-btn {
-  background: transparent;
-  border: 1px solid var(--color-border-hover);
-  border-radius: var(--radius);
-  padding: 0.3rem 0.75rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  color: var(--color-text);
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    color 0.2s,
-    background 0.2s;
-}
-
-.enhance__copy-btn:hover {
+.enhance__text-btn:hover {
   border-color: var(--wl-navy);
   color: var(--wl-navy);
-}
-
-.enhance__copy-btn--copied {
-  border-color: var(--color-success);
-  color: var(--color-success);
-  background: var(--color-success-bg);
-}
-
-.enhance__response-body {
-  padding: 1.25rem;
-  position: relative;
-}
-
-/* ─── Markdown body (v-html) ─── */
-.markdown-body {
-  font-family: var(--font-body);
-  font-size: 0.9375rem;
-  line-height: 1.7;
-  color: var(--color-heading);
-  word-wrap: break-word;
-}
-
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3),
-.markdown-body :deep(h4) {
-  font-family: var(--font-heading);
-  margin: 1em 0 0.5em;
-  line-height: 1.3;
-}
-
-.markdown-body :deep(h1) {
-  font-size: 1.5rem;
-}
-.markdown-body :deep(h2) {
-  font-size: 1.25rem;
-}
-.markdown-body :deep(h3) {
-  font-size: 1.1rem;
-}
-
-.markdown-body :deep(p) {
-  margin: 0.5em 0;
-}
-
-.markdown-body :deep(ul),
-.markdown-body :deep(ol) {
-  padding-left: 1.5em;
-  margin: 0.5em 0;
-}
-
-.markdown-body :deep(li + li) {
-  margin-top: 0.25em;
-}
-
-.markdown-body :deep(blockquote) {
-  border-left: 3px solid var(--wl-gold);
-  margin: 0.75em 0;
-  padding: 0.25em 1em;
-  color: var(--wl-warm-gray);
-}
-
-.markdown-body :deep(a) {
-  color: var(--wl-navy);
-  text-decoration: underline;
-}
-
-.markdown-body :deep(code) {
-  font-family: var(--font-mono);
-  font-size: 0.85em;
-  background: rgba(26, 39, 68, 0.06);
-  padding: 0.15em 0.35em;
-  border-radius: 3px;
-}
-
-.markdown-body :deep(pre.hljs) {
-  background: rgba(26, 39, 68, 0.04);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 1rem;
-  overflow-x: auto;
-  margin: 0.75em 0;
-}
-
-.markdown-body :deep(pre.hljs code) {
-  background: none;
-  padding: 0;
-  font-size: 0.8125rem;
-  line-height: 1.5;
-}
-
-.markdown-body :deep(hr) {
-  border: none;
-  border-top: 1px solid var(--color-border);
-  margin: 1em 0;
-}
-
-.markdown-body :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 0.75em 0;
-}
-
-.markdown-body :deep(th),
-.markdown-body :deep(td) {
-  border: 1px solid var(--color-border);
-  padding: 0.4em 0.75em;
-  text-align: left;
-}
-
-.markdown-body :deep(th) {
-  background: rgba(26, 39, 68, 0.04);
-  font-weight: 700;
 }
 
 /* ─── Input preview ─── */
@@ -1166,25 +828,5 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: var(--wl-warm-gray);
   user-select: none;
-}
-
-.enhance__cursor {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  background: var(--wl-gold);
-  margin-left: 2px;
-  vertical-align: text-bottom;
-  animation: blink 0.8s step-end infinite;
-}
-
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
 }
 </style>
