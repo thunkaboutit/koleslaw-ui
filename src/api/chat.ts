@@ -91,3 +91,16 @@ export async function sendChatStreamWithFiles(
 
   await readSSE(reader, decodeChatEvent, onEvent)
 }
+
+// ── One-shot enhance (the sessions kill switch fallback) ────────────
+
+/* Signature only; implemented in the next commit. */
+export async function sendEnhanceStream(
+  _prompt: string,
+  _context: string | null,
+  _onEvent: (event: ChatEvent) => void,
+  _signal?: AbortSignal,
+  _apiKeyId?: string | null,
+): Promise<void> {
+  throw new Error('Not implemented')
+}

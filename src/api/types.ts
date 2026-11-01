@@ -102,3 +102,49 @@ export interface ChatResponse {
   model_used: string
   usage: { input_tokens: number; output_tokens: number }
 }
+
+// ── Model sessions (mirrors koleslaw-api schemas/session.py) ────────
+
+export type EnhancementType = 'auto' | 'expand' | 'refine' | 'structure'
+
+export interface StartSessionRequest {
+  prompt: string
+  context?: string | null
+  enhancement_type?: EnhancementType
+}
+
+export type TurnAction = 'reply' | 'finalize'
+
+/* `message` is required for a reply and ignored for a finalize. */
+export interface TurnRequest {
+  action?: TurnAction
+  message?: string
+}
+
+export type TurnKind = 'question' | 'prompt' | 'empty'
+
+/* First event of POST /v1/sessions only.  The id is held in memory only. */
+export interface SessionStartEvent {
+  type: 'session'
+  session_id: string
+  expires_in: number
+  turns_left: number
+}
+
+/* Last event of a turn that completed.  An empty turn is not stored, so its
+   number is used again. */
+export interface TurnEvent {
+  type: 'turn'
+  kind: TurnKind
+  turn: number
+  turns_left: number
+  model_used: string
+}
+
+/* Last event of a turn that failed after the stream opened.  The message is
+   safe to show. */
+export interface SessionErrorEvent {
+  type: 'error'
+  code: string
+  message: string
+}

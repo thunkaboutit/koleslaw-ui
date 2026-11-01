@@ -4,6 +4,8 @@
    rendered.  A new event family (for example sessions) adds its own union
    and decoder and reuses readSSE and decodeChatEvent unchanged. */
 
+import type { SessionErrorEvent, SessionStartEvent, TurnEvent } from './types'
+
 export interface ThinkingEvent {
   type: 'thinking'
   delta: string
@@ -16,6 +18,13 @@ export interface TextEvent {
 }
 
 export type ChatEvent = ThinkingEvent | TextEvent
+
+export type SessionEvent =
+  | ThinkingEvent
+  | TextEvent
+  | SessionStartEvent
+  | TurnEvent
+  | SessionErrorEvent
 
 /* Returns the typed event, or null to drop the payload. */
 export type EventDecoder<E> = (data: unknown) => E | null
