@@ -83,28 +83,25 @@ describe('AppNavbar New Chat for anonymous visitors', () => {
     expect(newChatLinks(wrapper)).toHaveLength(0)
   })
 
-  it.fails(
-    'shows New Chat once a prompt is sent and resets the playground on the home page',
-    async () => {
-      const server = stubServer()
-      server.reply(ev.session(), ev.text('Which stack?'), ev.turn('question', 1, 2))
-      const session = useSessionStore()
-      session.draft = 'make an app'
-      await session.send()
-      const { router, wrapper } = await mountAt('/')
+  it('shows New Chat once a prompt is sent and resets the playground on the home page', async () => {
+    const server = stubServer()
+    server.reply(ev.session(), ev.text('Which stack?'), ev.turn('question', 1, 2))
+    const session = useSessionStore()
+    session.draft = 'make an app'
+    await session.send()
+    const { router, wrapper } = await mountAt('/')
 
-      const link = newChatLinks(wrapper)[0]
-      expect(link?.attributes('href')).toBe('/')
-      await link?.trigger('click')
-      await flushPromises()
+    const link = newChatLinks(wrapper)[0]
+    expect(link?.attributes('href')).toBe('/')
+    await link?.trigger('click')
+    await flushPromises()
 
-      expect(server.deletes()).toHaveLength(1)
-      expect(session.status).toBe('idle')
-      expect(router.currentRoute.value.path).toBe('/')
-    },
-  )
+    expect(server.deletes()).toHaveLength(1)
+    expect(session.status).toBe('idle')
+    expect(router.currentRoute.value.path).toBe('/')
+  })
 
-  it.fails('shows New Chat in the mobile menu once a prompt is sent', async () => {
+  it('shows New Chat in the mobile menu once a prompt is sent', async () => {
     const server = stubServer()
     server.reply(ev.session(), ev.text('Which stack?'), ev.turn('question', 1, 2))
     const session = useSessionStore()

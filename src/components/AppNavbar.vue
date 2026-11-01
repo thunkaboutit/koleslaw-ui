@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, inject, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, inject, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSessionStore } from '@/stores/session'
 import { useRouter, useRoute } from 'vue-router'
@@ -9,6 +9,11 @@ const session = useSessionStore()
 const router = useRouter()
 const route = useRoute()
 const forceRemount = inject<() => void>('forceRemount')
+
+// New Chat: always for signed-in users (their playground is /chat); for
+// anonymous visitors once a session has turns (their playground is /).
+const showNewChat = computed(() => !!auth.user || session.turns.length > 0)
+const newChatPath = computed(() => (auth.user ? '/chat' : '/'))
 
 const scrolled = ref(false)
 const menuOpen = ref(false)
@@ -50,13 +55,14 @@ async function signOut() {
           <span class="navbar__brand-text">koleslaw.ai</span>
         </RouterLink>
         <div class="navbar__links">
+          <RouterLink
+            v-if="showNewChat"
+            :to="newChatPath"
+            class="navbar__link"
+            @click="handleNav(newChatPath, () => session.newChat())"
+            >New Chat</RouterLink
+          >
           <template v-if="auth.user">
-            <RouterLink
-              to="/chat"
-              class="navbar__link"
-              @click="handleNav('/chat', () => session.newChat())"
-              >New Chat</RouterLink
-            >
             <RouterLink to="/dashboard" class="navbar__link" @click="handleNav('/dashboard')"
               >Dashboard</RouterLink
             >
@@ -99,13 +105,14 @@ async function signOut() {
       <RouterLink to="/blog" class="navbar__mobile-link" @click="handleNav('/blog')"
         >Blog</RouterLink
       >
+      <RouterLink
+        v-if="showNewChat"
+        :to="newChatPath"
+        class="navbar__mobile-link"
+        @click="handleNav(newChatPath, () => session.newChat())"
+        >New Chat</RouterLink
+      >
       <template v-if="auth.user">
-        <RouterLink
-          to="/chat"
-          class="navbar__mobile-link"
-          @click="handleNav('/chat', () => session.newChat())"
-          >New Chat</RouterLink
-        >
         <RouterLink to="/dashboard" class="navbar__mobile-link" @click="handleNav('/dashboard')"
           >Dashboard</RouterLink
         >
