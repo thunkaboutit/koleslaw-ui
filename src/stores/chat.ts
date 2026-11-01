@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { ChatMessage } from '@/api/types'
 import { sendChatStream, sendChatStreamWithFiles } from '@/api/chat'
+import type { ChatEvent } from '@/api/sse'
 import { useAuthStore } from '@/stores/auth'
 import { useKeysStore } from '@/stores/keys'
 
@@ -53,13 +54,13 @@ export const useChatStore = defineStore('chat', () => {
     isThinking.value = false
     abortController = new AbortController()
 
-    const onChunk = (chunk: { delta: string; type?: 'text' | 'thinking' }) => {
-      if (chunk.type === 'thinking') {
-        streamingThinking.value += chunk.delta
+    const onChunk = (event: ChatEvent) => {
+      if (event.type === 'thinking') {
+        streamingThinking.value += event.delta
         if (!isThinking.value) isThinking.value = true
       } else {
         if (isThinking.value) isThinking.value = false
-        streamingContent.value += chunk.delta
+        streamingContent.value += event.delta
       }
     }
 

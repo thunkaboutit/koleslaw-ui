@@ -97,12 +97,6 @@ export interface ChatRequest {
   context?: string
 }
 
-export interface ChatChunk {
-  delta: string
-  finish_reason: string | null
-  type?: 'text' | 'thinking'
-}
-
 export interface ChatResponse {
   message: ChatMessage
   model_used: string
